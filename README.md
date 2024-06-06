@@ -4,6 +4,8 @@
 
 PSCon, is designed to assist product search through conversations with human-like language. It supports dual markets and two languages, collected via a coached human-human data collection protocol.  Additionally, it includes a knowledge graph to support the development of knowledge graph-based CPS models. This dataset is unique as it is the first to offer a CPS dataset with human-like language for dual markets and multiple languages.
 
+The dataset is licensed under the CC-BY-4.0 license.
+
 ## Privacy
 
 We take data privacy very seriously. All of the data you access through this repository has been carefully prepared to prevent any privacy breaches or data leakage. You can use this data with confidence, knowing that all necessary precautions have been taken.
