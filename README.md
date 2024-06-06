@@ -43,15 +43,15 @@ PSCon
 
 - The `PSCon` is the root directory. Within this, the `dataset` directory contains various JSON files that are part of the `PSCon` dataset. `system` is the `PSCon` dataset collection system. `experiment` is the model folder for `PSCon`.
 - `dataset`
-  - `conversation_cn.json`, `conversation_en.json` are the Chinese and English conversation data.
+  - `conversation_cn.json`, `conversation_en.json` are the Chinese and English conversation data, respectively.
   - `croissant-conversation-cn.json`, `croissant-conversation-en.json` are the Croissant Format.
-  - `knowledgeGraph_cn.json`, `knowledgeGraph_en.json` are the Chinese and English knowledge graph data. The knowledge graph consists of two parts, the search product and its details, and whether the users of the product recommended in the dialogue like it.
+  - `knowledgeGraph_cn.json`, `knowledgeGraph_en.json` are the Chinese and English knowledge graph data, respectively. The knowledge graph consists of users, products, and their details.
   
 - `system`
   - `chat-labelling-backend` is the back-end project of the system, which is responsible for data storage and management and business logic processing.
   - `chat-labelling-frontend` is the front-end project of the system, responsible for UI design and user interaction
-  - `chat-labelling-proxy-server` is the proxy project of the system and is responsible for the processing of product search interface.
-  - `resources` is the resource library of the system, which stores the resources commonly used at the front and back end.
+  - `chat-labelling-proxy-server` is the proxy project of the system and is responsible for the processing of the product search interface.
+  - `resources` is the resource library of the system, which stores the resources commonly used at the front and back ends.
   - `README.md` is the instruction document for the system.
 
 - `experiment`
@@ -65,7 +65,7 @@ PSCon
 
 ## Dataset Description
 
-The conversation information in the PSCon dataset are stored in individual conversation_xx.json files. Each file contains a list of Python arrays, and each item in the array is a python dictionary that represents a complete conversation. With each key indicating:
+The conversation information in the PSCon dataset is stored in individual conversation_xx.json files. Each file contains a list of Python arrays, and each item in the array is a Python dictionary that represents a complete conversation. With each key indicating:
 
 - `conv_id`: A number representing the corresponding conversation ID.
 - `conversation`: Detailed conversation content.
@@ -76,11 +76,11 @@ The conversation information in the PSCon dataset are stored in individual conve
   - `intent`: The intent of the user to send a message.
   - `action`: The action of the system to send a message.
   - `keywords`: The keywords in user messages.
-  - `clarifying_attribute`: The attributes of system clarification action that takes effect when the action of the system is clarify.
-  - `recommended_products`: The products recommended by the system that takes effect when the action of the system is recommend
-  - `user_rating`: Whether the user likes the products recommended by the system that takes effect when the system recommends the product and the `turn_id` of message is the last turn.
+  - `clarifying_attribute`: The attributes of system clarification action that takes effect when the action of the system is `clarify`.
+  - `recommended_products`: The products recommended by the system that takes effect when the action of the system is `recommend`.
+  - `user_rating`: Whether the user likes the products recommended by the system that takes effect when the system recommends the product and the `turn_id` of the message is the last turn.
 
-To be specific, here is the example instance:
+To be specific, here is an example instance from conversation_en.json (Croissant file is croissant-conversation-en.json):
 
 ```json
 
