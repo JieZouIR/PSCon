@@ -11,7 +11,7 @@ We take data privacy very seriously. All of the data you access through this rep
 ## Download
 
 ```
-git clone https://github.com/shuxiHan/PSCon
+git clone https://github.com/JieZouIR/PSCon
 cd PSCon/dataset
 ```
 
