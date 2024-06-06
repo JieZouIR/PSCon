@@ -3,7 +3,7 @@
     "name": "PSCon_cn",
     "description": "PSCon, is designed to assist product search through conversations with human-like language. It supports dual markets and two languages, collected via a coached human-human data collection protocol. Additionally, it includes a knowledge graph to support the development of knowledge graph-based CPS models. This dataset is unique as it is the first to offer a CPS dataset with human-like language for dual markets and multiple languages.",
     "license": "cc-by-4.0",
-    "url": "https://github.com/shuxiHan/PSCon",
+    "url": "https://github.com/JieZouIR/PSCon",
     "version": "1.0.0",
     "distribution": [
       {
