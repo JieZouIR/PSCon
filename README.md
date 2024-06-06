@@ -79,6 +79,7 @@ The conversation information in the PSCon dataset is stored in individual conver
   - `action`: The action of the system to send a message.
   - `keywords`: The keywords in user messages.
   - `clarifying_attribute`: The attributes of system clarification action that takes effect when the action of the system is `clarify`.
+  - `search\_results`: search results of products returned by the search engine.
   - `recommended_products`: The products recommended by the system that takes effect when the action of the system is `recommend`.
   - `user_rating`: Whether the user likes the products recommended by the system that takes effect when the system recommends the product and the `turn_id` of the message is the last turn.
 
