@@ -1,0 +1,89 @@
+{
+    "@type": "sc:Dataset",
+    "name": "PSCon_cn",
+    "description": "PSCon, is designed to assist product search through conversations with human-like language. It supports dual markets and two languages, collected via a coached human-human data collection protocol. Additionally, it includes a knowledge graph to support the development of knowledge graph-based CPS models. This dataset is unique as it is the first to offer a CPS dataset with human-like language for dual markets and multiple languages.",
+    "license": "cc-by-4.0",
+    "url": "https://github.com/shuxiHan/PSCon",
+    "version": "1.0.0",
+    "distribution": [
+      {
+        "@type": "cr:FileObject",
+        "@id": "conversation_cn.json",
+        "name": "conversation_cn.json",
+        "contentUrl": ".\\conversation_cn_croissant_data.json",
+        "description": "PSCon Chinese conversation data",
+        "encodingFormat": "application/json",
+        "sha256": "645b03e5326095423d076ef87a15a0e5f48f40f05b6d9c2ba1a607f7bfb5b963"
+      }
+    ],
+    "recordSet": [
+      {
+        "@type": "cr:RecordSet",
+        "@id": "default",
+        "name": "default",
+        "description": "conv_id and conversation",
+        "field": [
+          {
+            "@type": "cr:Field",
+            "@id": "default/conv_id",
+            "name": "conv_id",
+            "description": "The conv_id of the conversation.",
+            "dataType": "sc:Integer",
+            "source": {
+              "fileSet": { "@id": "conversation_cn.json" },
+              "extract": { "jsonPath": "$[*].conv_id" }
+            }
+          },
+          {
+            "@type": "cr:Field",
+            "@id": "default/conversation",
+            "name": "conversation",
+            "description": "The content of the conversation.",
+            "dataType": "sc:Text",
+            "source": {
+              "fileSet": { "@id": "conversation_cn.json" },
+              "extract": { "jsonPath": "$[*].conversation" }
+            }
+          }
+        ]
+      }
+    ],
+    "@context": {
+      "@language": "en",
+      "@vocab": "https://schema.org/",
+      "citeAs": "cr:citeAs",
+      "column": "cr:column",
+      "conformsTo": "dct:conformsTo",
+      "cr": "http://mlcommons.org/croissant/",
+      "rai": "http://mlcommons.org/croissant/RAI/",
+      "data": { "@id": "cr:data", "@type": "@json" },
+      "dataType": { "@id": "cr:dataType", "@type": "@vocab" },
+      "dct": "http://purl.org/dc/terms/",
+      "examples": { "@id": "cr:examples", "@type": "@json" },
+      "extract": "cr:extract",
+      "field": "cr:field",
+      "fileProperty": "cr:fileProperty",
+      "fileObject": "cr:fileObject",
+      "fileSet": "cr:fileSet",
+      "format": "cr:format",
+      "includes": "cr:includes",
+      "isLiveDataset": "cr:isLiveDataset",
+      "jsonPath": "cr:jsonPath",
+      "key": "cr:key",
+      "md5": "cr:md5",
+      "parentField": "cr:parentField",
+      "path": "cr:path",
+      "recordSet": "cr:recordSet",
+      "references": "cr:references",
+      "regex": "cr:regex",
+      "repeated": "cr:repeated",
+      "replace": "cr:replace",
+      "sc": "https://schema.org/",
+      "separator": "cr:separator",
+      "source": "cr:source",
+      "subField": "cr:subField",
+      "transform": "cr:transform"
+    },
+    "conformsTo": "http://mlcommons.org/croissant/1.0"
+  }
+  

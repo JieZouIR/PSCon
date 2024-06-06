@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversation Interface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      //height: 100vh;
+    }
+
+    #app {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      max-width: 1000px;
+      padding: 20px;
+    }
+
+    .message-box {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .message-box2 {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #ffffff;
+    }
+    .action-explanation {
+      font-weight: normal;
+      margin-bottom: 5px;
+    }
+
+    .action-tooltip {
+      font-size: 14px;
+      color: #3498db;
+      margin-left: 5px;
+    }
+
+    .response-box {
+      margin-top: 10px;
+    }
+
+    .finish-button {
+      background-color: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 15px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto; /* 居中对齐 */
+    }
+    h1 {
+      font-size: 34px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+  </style>
+</head>
+<body>
+<div id="app" >
+  <h1>INSTRUCTION</h1>
+  <div class="message-box2">
+    <p class="action-explanation">
+      Thank you for agreeing to take part of this study, where you will be acting as a normal user or system role to have a chat. The chat is about seeking for products (normal user role) or recommending products (system role) to buy. P.S. We value your privacy. As such, we will not report identifiable information on any of the manuscripts and other public materials that will result from this study.
+      <<br><br>Please carefully watch the following operation introduction video:<a href="https://youtu.be/EbhRu8xReBY" target="_blank ">Instructions for system users of chat-labelling platform (1min39s).</a>If the video is not clear, please adjust to the high-definition version on the video viewing page to watch.
+    </p>
+  </div>
+  <div class="message-box2">
+    <p class="action-explanation">
+      Your role: System.
+    </p>
+    <p class="action-explanation">
+      To complete the study, please follow the steps outlined below.
+    </p>
+    <div class="message-box">
+      <p class="action-explanation">
+        1. We would like to know some general information about you, so we will first ask you to complete a survey related to demographic data, i.e., gender, age, and majors.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        2. You will then have a conversation with the user. Please waiting for the user to send the first message. After you get the message from the user, you need to select an 'action' first. When selecting an 'action', you can see the explanation for each 'action' by hovering your mouse over the '?' icon beside the 'action'. You then write a message in the 'response' (by clicking the 'submit' botton). To send multiple messages in one round, be sure to check 'send another message' before sending a message.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        3. For each round of conversation, you can input a query to search for related results for products. You can also click 'show filters' to see filters and search for better products based on the filters when necessary. Note that the search engine may be a bit slow, please be patient after you submit your query and wait for the results.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        4. When you think that there are products meeting the user's need, you can select 'Recommend products' in the 'action' and select corresponding products from the search result panel (by checking the checkbox right next to the search results of products) to recommend to the user. Write a text message to respond in the 'response' textbox (e.g., what about the following choices?) and your selection of recommended products will be added automatically after your text message to send to the user.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        5. When you think you need more information about the user's need, you can select 'Ask Clarifying questions' in the 'action', select corresponding 'aspects' from the result panel (by checking the checkbox right next to the 'aspects'), and ask a clarifying question in the 'response' textbox about the 'aspects' (e.g., what brand of cell phone do you like? 'Brand' is the aspect you want to ask).
+      </p>
+      <img src="/static/aspect.png" alt="Aspect Image" style="width: 900px; height: auto;">
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        6. After the user is done for the conversation and clicks 'finish the conversation' button, you will need to answer a few questionnaires to evaluate the conversation.
+      </p>
+    </div>
+    <button class="finish-button" onclick="tosys()">Finish</button>
+  </div>
+</div>
+<script>
+  function tosys() {
+    // 在这里编写您的方法逻辑
+    const queryParams = new URLSearchParams(window.location.search);
+    const uuid = queryParams.get('uuid');
+    const user = queryParams.get('user');
+    window.location = '/index?_uuid=' + uuid + '&_user=' + user
+  }
+</script>
+</body>
+</html>

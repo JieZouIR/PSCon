@@ -1,0 +1,60 @@
+{
+  "user": [
+    {
+      "title": "Reveal intent",
+      "name": "Reveal",
+      "tooltip": "Start a new conversation by revealing your intent."
+    },
+    {
+      "title": "Revise intent",
+      "name": "Revise",
+      "tooltip": "Make a correction about your intent."
+    },
+    {
+      "title": "Feedback/Interpret",
+      "name": "Interpret",
+      "tooltip": "Answer a clarifying question or respond to product recommendations from the system."
+    },
+    {
+      "title": "Request-rephrase",
+      "name": "Inquire",
+      "tooltip": "Did not understand system responses, inquire details about the response from the system."
+    },
+    {
+      "title": "Chitchat",
+      "name": "Chitchat",
+      "tooltip": "Greeting, etc."
+    }
+  ],
+  "system": [
+    {
+      "title": "Ask Clarifying questions",
+      "name": "Clarify",
+      "tooltip": "Choose some suggested aspects and ask the user a clarifying question.",
+      "allowEmptySearch": true
+    },
+    {
+      "title": "Recommend products",
+      "name": "Recommend",
+      "tooltip": "Recommend some products to the user."
+    },
+    {
+      "title": "No answer",
+      "name": "No answer",
+      "tooltip": "Cannot find related products to meet user's need.",
+      "allowEmptySearch": true
+    },
+    {
+      "title": "Request-rephrase",
+      "name": "Inquire",
+      "tooltip": "Did not understand user responses, inquire details about the response from the user.",
+      "allowEmptySearch": true
+    },
+    {
+      "title": "Chitchat",
+      "name": "Chitchat",
+      "tooltip": "Greeting, etc.",
+      "allowEmptySearch": true
+    }
+  ]
+}

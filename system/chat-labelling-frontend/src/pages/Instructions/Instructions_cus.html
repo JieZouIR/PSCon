@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversation Interface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      //height: 100vh;
+    }
+
+    #app {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      padding: 20px;
+    }
+
+    .message-box {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+    .message-box2 {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #ffffff;
+    }
+    .action-explanation {
+      font-weight: normal;
+      margin-bottom: 5px;
+    }
+
+    .action-tooltip {
+      font-size: 14px;
+      color: #3498db;
+      margin-left: 5px;
+    }
+
+    .response-box {
+      margin-top: 10px;
+    }
+
+    .finish-button {
+      background-color: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 8px 15px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto; /* 居中对齐 */
+    }
+    h1 {
+      font-size: 34px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>INSTRUCTION</h1>
+  <div class="message-box2">
+    <p class="action-explanation">
+      Thank you for agreeing to take part of this study, where you will be acting as a normal user or system role to have a chat. The chat is about seeking for products (normal user role) or recommending products (system role) to buy. P.S. We value your privacy. As such, we will not report identifiable information on any of the manuscripts and other public materials that will result from this study.
+      <br><br>Please carefully watch the following operation introduction video:<a href="https://youtu.be/ghOi2Q5JqEI" target="_blank ">Instructions for normal users of chat-labelling platform (1min39s).</a>If the video is not clear, please adjust to the high-definition version on the video viewing page to watch.
+    </p>
+  </div>
+  <div class="message-box2">
+    <p class="action-explanation">
+      Your role: Normal user.
+    </p>
+    <p class="action-explanation">
+      To complete the study, please follow the steps outlined below.
+    </p>
+    <div class="message-box">
+      <p class="action-explanation">
+        1. We would like to know some general information about you, so we will first ask you to complete a survey related to demographic data, i.e., gender, age, and majors.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        2. You will then have a conversation with the system. The conversation is initiated by you. You need to select an 'intent' first, and then write a message in the 'response' to send to the system (by clicking the 'submit' botton). When selecting an 'intent', you can see the explanation for each 'intent' by hovering your mouse over the '?' icon beside the 'intent'. To send multiple messages in one round, be sure to check 'send another message' before sending a message.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        3. After sending your messages, please wait for the system to reply or recommend products to you. After you receive the system's message, you can repeat step 2 to continue the conversation.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        4. After you think you are done for the conversation, you can click 'finish the conversation' to finish the conversation.
+      </p>
+    </div>
+    <div class="message-box">
+      <p class="action-explanation">
+        5. After you click 'finish the conversation', you will need to <strong>evaluate the relevance of the products</strong> recommended by the system in the conversations. So please make sure you are aware of the relevance of the recommended products with your target product.
+      </p>
+    </div>
+    <button class="finish-button" onclick="tosys()">Finish</button>
+  </div>
+</div>
+<script>
+  function tosys() {
+    // 在这里编写您的方法逻辑
+    const queryParams = new URLSearchParams(window.location.search);
+    const uuid = queryParams.get('uuid');
+    const user = queryParams.get('user');
+    window.location = '/index?_uuid=' + uuid + '&_user=' + user
+  }
+</script>
+</body>
+</html>

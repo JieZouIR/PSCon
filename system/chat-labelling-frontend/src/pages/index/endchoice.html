@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Page</title>
+  <style>
+    /* 居中布局 */
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f4f4f4;
+    }
+
+    /* 包裹文本和按钮的容器 */
+    .content {
+      text-align: center;
+      padding: 20px;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      width: 30%; /* 调整容器宽度 */
+    }
+
+    /* 按钮样式 */
+    .button {
+      margin-top: 10px; /* 添加一些间距 */
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+<div class="content">
+  <p>This conversation has ended. Please click the button to return to the login interface to start another conversation or close the webpage to exit.
+</p>
+  <button id="clickButton" class="button">Back to Login</button>
+</div>
+
+<script>
+  // 添加点击事件监听器，点击按钮时跳转到 login.html 页面
+  document.getElementById('clickButton').addEventListener('click', function() {
+    window.location = '/login.html';
+  });
+</script>
+</body>
+</html>
