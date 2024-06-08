@@ -1,8 +1,6 @@
 # PSCon Dataset Collection System
 
-![](./U1.png)
-
-<img src="./U2.png" style="zoom:50%;" />
+![](./UI.png)
 
 ## Requirements
 
