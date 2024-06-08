@@ -1,5 +1,7 @@
 # PSCon Dataset Collection System
 
+The chat room interface is as follows:
+
 ![](./UI.png)
 
 ## Requirements
