@@ -28,7 +28,7 @@ We recommend to use conda for installing the requirements. If you haven't instal
 
 ## Datasets
 
-We use [KdConv](https://github.com/thu-coai/KdConv/tree/master/data) and [DuConv](https://ai.baidu.com/broad/introduction?dataset=duconv) datasets for pretraining. You can get them from the provided links and put them in the corresponding folders in `./data/`. For example, KdConv datasets should be put in `./data/KdConv`.  We use the WISE dataset to fine-tune the model, and this dataset is available in `./data/WISE`. Details about the WISE dataset can be found [here](../README.md)'s Dataset Description.
+We use [KdConv](https://github.com/thu-coai/KdConv/tree/master/data) and [DuConv](https://ai.baidu.com/broad/introduction?dataset=duconv) datasets for pretraining. You can get them from the provided links and put them in the corresponding folders in `./data/`. For example, KdConv datasets should be put in `./data/KdConv`.  We use the PSCon dataset to fine-tune the model, and this dataset is available in `./data/PSCon`. Details about the PSCon dataset can be found [here](../README.md)'s Dataset Description.
 
 ## Training
 

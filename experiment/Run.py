@@ -8,25 +8,25 @@ from common.TransformerEncoder import *
 from common.TransformerDecoder import *
 from common.PositionalEmbedding import *
 from common.DataParallel import *
+from common.Utils import *
 from evaluation.Evaluation import *
-# from evaluation.Evaluation_intent import *
 
-# 使用正确的绝对路径格式导入模块
-from data.WISE.WISE import *
+from data.PSCon.PSCon import *
 from data.DuConv.DuConv import *
 from data.KdConv.KdConv import *
+from data.Utils import *
 from model.T1 import *
 from model.T2 import *
 from model.T3 import *
 from model.T4 import *
 from model.T5 import *
 from model.T6 import *
-from model.WISE import *
-from model.WISE_T1 import *
-from model.WISE_T2 import *
-from model.WISE_T3 import *
-from model.WISE_T4 import *
-from model.WISE_T5 import *
+from model.PSCon_T1 import *
+from model.PSCon_T2 import *
+from model.PSCon_T3 import *
+from model.PSCon_T4 import *
+from model.PSCon_T5 import *
+from model.PSCon_T6 import *
 from model.DuConv import *
 from model.KdConv import *
 
@@ -41,23 +41,23 @@ def makedirs(path):
 def prepare_dataset(args):
     tokenizer = char_tokenizer()
     vocab2id, id2vocab = load_vocab(args.vocab)
-    wise_intent2id, wise_id2intent = load_vocab(args.wise_intent)
-    wise_action2id, wise_id2action = load_vocab(args.wise_action)
+    PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
+    PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
-    prepare_wise_dataset(args)
-    wise_train_dataset = WISEDataset([args.wise_train_conversation_file], [args.wise_document_file], vocab2id,
-                                     wise_intent2id, wise_action2id, tokenizer)
-    wise_valid_dataset = WISEDataset([args.wise_valid_conversation_file], [args.wise_document_file], vocab2id,
-                                     wise_intent2id, wise_action2id, tokenizer)
-    wise_test_dataset = WISEDataset([args.wise_test_conversation_file], [args.wise_document_file], vocab2id,
-                                    wise_intent2id, wise_action2id, tokenizer)
-    wise_testunseen_dataset = WISEDataset([args.wise_testunseen_conversation_file], [args.wise_document_file], vocab2id,
-                                          wise_intent2id, wise_action2id, tokenizer)
-    wise_testseen_dataset = WISEDataset([args.wise_testseen_conversation_file], [args.wise_document_file], vocab2id,
-                                        wise_intent2id, wise_action2id, tokenizer)
-    print('WISE done, ', '\ntrain data size', wise_train_dataset.len, '\nvalid data size', wise_valid_dataset.len,
-          '\ntest data size', wise_test_dataset.len, '\ntestunseen data size', wise_testunseen_dataset.len,
-          '\ntestseen data size', wise_testseen_dataset.len)
+    prepare_PSCon_dataset(args)
+    PSCon_train_dataset = PSConDataset([args.PSCon_train_conversation_file], [args.PSCon_document_file], vocab2id,
+                                     PSCon_intent2id, PSCon_action2id, tokenizer)
+    PSCon_valid_dataset = PSConDataset([args.PSCon_valid_conversation_file], [args.PSCon_document_file], vocab2id,
+                                     PSCon_intent2id, PSCon_action2id, tokenizer)
+    PSCon_test_dataset = PSConDataset([args.PSCon_test_conversation_file], [args.PSCon_document_file], vocab2id,
+                                    PSCon_intent2id, PSCon_action2id, tokenizer)
+    PSCon_testunseen_dataset = PSConDataset([args.PSCon_testunseen_conversation_file], [args.PSCon_document_file], vocab2id,
+                                          PSCon_intent2id, PSCon_action2id, tokenizer)
+    PSCon_testseen_dataset = PSConDataset([args.PSCon_testseen_conversation_file], [args.PSCon_document_file], vocab2id,
+                                        PSCon_intent2id, PSCon_action2id, tokenizer)
+    print('PSCon done, ', '\ntrain data size', PSCon_train_dataset.len, '\nvalid data size', PSCon_valid_dataset.len,
+          '\ntest data size', PSCon_test_dataset.len, '\ntestunseen data size', PSCon_testunseen_dataset.len,
+          '\ntestseen data size', PSCon_testseen_dataset.len)
 
 
 def build_modules(args):
@@ -76,22 +76,22 @@ def build_modules(args):
     return vocab2id, id2vocab, embedding, encoder, decoder, generator
 
 
-def build_wise_model(args):
-    wise_intent2id, wise_id2intent = load_vocab(args.wise_intent)
-    wise_action2id, wise_id2action = load_vocab(args.wise_action)
+def build_PSCon_model(args):
+    PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
+    PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
     vocab2id, id2vocab, embedding, encoder, decoder, generator = build_modules(args)
 
-    t1 = T1(embedding, encoder, args.hidden_size, wise_id2intent)
+    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)
     t2 = T2(embedding, encoder, args.hidden_size, id2vocab)
-    t3 = T3(embedding, encoder, args.hidden_size, wise_id2action)
+    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)
     t4 = T4(embedding, encoder, args.hidden_size)
     t5 = T5(embedding, encoder, args.hidden_size)
     t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)
 
-    wise_model = WISEModel(t1, t2, t3, t4, t5, t6)
-    init_params(wise_model)
-    return wise_model, vocab2id, wise_intent2id, wise_action2id
+    PSCon_model = PSConModel(t1, t2, t3, t4, t5, t6)
+    init_params(PSCon_model)
+    return PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id
 
 
 def build_pretrained_models(args):
@@ -209,8 +209,8 @@ def pretrain(args):
 
 
 def load_pretrained_model(args, prefix='full'):
-    wise_intent2id, wise_id2intent = load_vocab(args.wise_intent)
-    wise_action2id, wise_id2action = load_vocab(args.wise_action)
+    PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
+    PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
     vocab2id, id2vocab, embedding, encoder, decoder, generator = build_modules(args)
     if prefix == 'full':
@@ -230,7 +230,7 @@ def load_pretrained_model(args, prefix='full'):
         raise ValueError
 
     if os.path.exists(os.path.join(args.output_path, file_path, 'embedding.model')):
-        print("load WISE model...")
+        print("load PSCon model...")
         embedding.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'embedding.model'), map_location='cpu'))
         encoder.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'encoder.model'), map_location='cpu'))
         decoder.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'decoder.model'), map_location='cpu'))
@@ -241,17 +241,17 @@ def load_pretrained_model(args, prefix='full'):
         freeze_params(decoder)
         freeze_params(generator)
     else:
-        print("initial WISE model...")
+        print("initial PSCon model...")
         init_params(embedding)
         init_params(encoder)
         init_params(decoder)
         init_params(generator)
 
-    t1 = T1(embedding, encoder, args.hidden_size, wise_id2intent)
+    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)
     init_params(t1.linear)
     t2 = T2(embedding, encoder, args.hidden_size, id2vocab)
     init_params(t2.linear)
-    t3 = T3(embedding, encoder, args.hidden_size, wise_id2action)
+    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)
     init_params(t3.linear)
     t4 = T4(embedding, encoder, args.hidden_size)
     init_params(t4.linear)
@@ -259,118 +259,118 @@ def load_pretrained_model(args, prefix='full'):
     init_params(t5.linear)
     t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)
 
-    wise_model = WISEModel(t1, t2, t3, t4, t5, t6)
-    wise_t1model = WISE_T1Model(t1, t2, t3, t4, t5, t6)
-    wise_t2model = WISE_T2Model(t1, t2, t3, t4, t5, t6)
-    wise_t3model = WISE_T3Model(t1, t2, t3, t4, t5, t6)
-    wise_t4model = WISE_T4Model(t1, t2, t3, t4, t5, t6)
-    wise_t5model = WISE_T5Model(t1, t2, t3, t4, t5, t6)
-    return wise_model, vocab2id, wise_intent2id, wise_action2id, wise_t1model, wise_t2model, wise_t3model, wise_t4model, wise_t5model
+    PSCon_model = PSConModel(t1, t2, t3, t4, t5, t6)
+    PSCon_t1model = PSCon_T1Model(t1, t2, t3, t4, t5, t6)
+    PSCon_t2model = PSCon_T2Model(t1, t2, t3, t4, t5, t6)
+    PSCon_t3model = PSCon_T3Model(t1, t2, t3, t4, t5, t6)
+    PSCon_t4model = PSCon_T4Model(t1, t2, t3, t4, t5, t6)
+    PSCon_t5model = PSCon_T5Model(t1, t2, t3, t4, t5, t6)
+    return PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id, PSCon_t1model, PSCon_t2model, PSCon_t3model, PSCon_t4model, PSCon_t5model
 
 
 def finetune(args):
     tokenizer = char_tokenizer()
     if args.mode == 'finetune-nokdconv':
         prefix = "nokdconv"
-        save = "WISE_nokdconv/"
+        save = "PSCon_nokdconv/"
         print("finetune with pretrain model without using kdconv dataset")
     elif args.mode == "finetune-noduconv":
         prefix = "noduconv"
-        save = "WISE_noduconv/"
+        save = "PSCon_noduconv/"
         print("finetune with pretrain model without using duconv dataset")
     elif args.mode == "finetune-none":
         prefix = "no"
-        save = "WISE_nopretrain/"
+        save = "PSCon_nopretrain/"
         print("train without using pretrain dataset")
     elif args.mode[:8] == "finetune":
         prefix = "full"
-        save = "WISE_withpretrain/"
+        save = "PSCon_withpretrain/"
         print("finetune with full dataset")
     else:
         print("fault args.model")
         raise ValueError
-    WISE, vocab2id, wise_intent2id, wise_action2id, w1, w2, w3, w4, w5 = load_pretrained_model(args, prefix)
+    PSCon, vocab2id, PSCon_intent2id, PSCon_action2id, w1, w2, w3, w4, w5 = load_pretrained_model(args, prefix)
 
     if args.mode == 'finetune-not1':
-        wise_model = w1
-        save = 'WISE_not1/'
-        print("finetune WISE-not1")
+        PSCon_model = w1
+        save = 'PSCon_not1/'
+        print("finetune PSCon-not1")
     elif args.mode == 'finetune-not2':
-        wise_model = w2
-        save = 'WISE_noT2/'
-        print("finetune WISE-not2")
+        PSCon_model = w2
+        save = 'PSCon_noT2/'
+        print("finetune PSCon-not2")
     elif args.mode == 'finetune-not3':
-        wise_model = w3
-        save = 'WISE_noT3/'
-        print("finetune WISE-not3")
+        PSCon_model = w3
+        save = 'PSCon_noT3/'
+        print("finetune PSCon-not3")
     elif args.mode == 'finetune-not4':
-        wise_model = w4
-        save = 'WISE_noT4/'
-        print("finetune WISE-not4")
+        PSCon_model = w4
+        save = 'PSCon_noT4/'
+        print("finetune PSCon-not4")
     elif args.mode == 'finetune-not5':
-        wise_model = w5
+        PSCon_model = w5
         save = 'finetune_not5/'
-        print("finetune WISE-not5")
+        print("finetune PSCon-not5")
     elif args.mode == 'finetune':
-        wise_model = WISE
-        save = 'WISE_withpretrain/'
-        print("finetune WISE")
+        PSCon_model = PSCon
+        save = 'PSCon_withpretrain/'
+        print("finetune PSCon")
     elif args.mode == 'finetune-none':
-        wise_model = WISE
-        save = "WISE_nopretrain/"
-        print("train WISE-FULL")
+        PSCon_model = PSCon
+        save = "PSCon_nopretrain/"
+        print("train PSCon-FULL")
     elif args.mode[:8] == 'finetune':
-        wise_model = WISE
-        print("finetune WISE-FULL")
+        PSCon_model = PSCon
+        print("finetune PSCon-FULL")
     else:
         print("fault args.mode")
         raise ValueError
-    print(count_parameters(wise_model))
+    print(count_parameters(PSCon_model))
     print("model save in ", os.path.join(args.output_path, save))
-    dataset = WISEDataset([args.wise_train_conversation_file], [args.wise_document_file], vocab2id, wise_intent2id,
-                          wise_action2id, tokenizer)
-    print('WISE training', 'data_size', dataset.len, 'gpu', args.num_gpus, 'epoch', args.epoch, 'batch_size',
+    dataset = PSConDataset([args.PSCon_train_conversation_file], [args.PSCon_document_file], vocab2id, PSCon_intent2id,
+                          PSCon_action2id, tokenizer)
+    print('PSCon training', 'data_size', dataset.len, 'gpu', args.num_gpus, 'epoch', args.epoch, 'batch_size',
           args.batch_size)
-    optimizer = AdamW(wise_model.parameters(), lr=args.lr)
+    optimizer = AdamW(PSCon_model.parameters(), lr=args.lr)
     bp_count = (args.epoch * dataset.len) / (args.num_gpus * args.batch_size)
     print('bp_count', bp_count)
     scheduler = lr_scheduler.CosineAnnealingWarmRestarts(optimizer, int(0.1 * (bp_count + 100)), T_mult=2, eta_min=1e-7)
-    trainer = DataParallel(wise_model, optimizer, scheduler, args.local_rank)
+    trainer = DataParallel(PSCon_model, optimizer, scheduler, args.local_rank)
 
     for i in range(args.epoch):
         print('epoch', i + 1)
-        trainer.train_epoch('train', dataset, wise_collate_fn, args.batch_size, i + 1)
+        trainer.train_epoch('train', dataset, PSCon_collate_fn, args.batch_size, i + 1)
         if (i + 1) == 10:
-            unfreeze_params(wise_model)
+            unfreeze_params(PSCon_model)
         trainer.serialize(i + 1, os.path.join(args.output_path, save))
 
 
 def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
     tokenizer = char_tokenizer()
-    wise_model, vocab2id, wise_intent2id, wise_action2id = build_wise_model(args)
+    PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id = build_PSCon_model(args)
 
     if prefix == 'valid':
         print("infer valid")
-        conversation_file = args.wise_valid_conversation_file
+        conversation_file = args.PSCon_valid_conversation_file
     elif prefix == 'train':
         print("infer train")
-        conversation_file = args.wise_train_conversation_file
+        conversation_file = args.PSCon_train_conversation_file
     elif prefix == 'testseen':
         print("infer testseen")
-        conversation_file = args.wise_testseen_conversation_file
+        conversation_file = args.PSCon_testseen_conversation_file
     elif prefix == 'testunseen':
         print("infer testunseen")
-        conversation_file = args.wise_testunseen_conversation_file
+        conversation_file = args.PSCon_testunseen_conversation_file
     elif prefix == 'test':
         print("infer test")
-        conversation_file = args.wise_test_conversation_file
+        conversation_file = args.PSCon_test_conversation_file
     else:
         raise ValueError
-    dataset = WISEDataset([conversation_file], [args.wise_document_file], vocab2id, wise_intent2id, wise_action2id,
+    dataset = PSConDataset([conversation_file], [args.PSCon_document_file], vocab2id, PSCon_intent2id, PSCon_action2id,
                           tokenizer)
 
     print("infer data size ", dataset.len)
-    trainer = DataParallel(wise_model, None, None, args.local_rank)
+    trainer = DataParallel(PSCon_model, None, None, args.local_rank)
 
     convs = {}
     with codecs.open(conversation_file, encoding='utf-8') as f:
@@ -378,8 +378,8 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
             conv = json.loads(line)
             convs[conv[-1]['msg_id']] = conv
     # folder = "withpretrain"
-    model_path = "".join(["WISE_", folder, "/"])
-    file_path = "".join(["WISE_", folder, "_infer_", prefix, "/"])
+    model_path = "".join(["PSCon_", folder, "/"])
+    file_path = "".join(["PSCon_", folder, "_infer_", prefix, "/"])
     print("modle path", model_path)
     print("file path", file_path)
     if not os.path.exists(os.path.join(args.output_path, model_path)):
@@ -395,15 +395,15 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
         print('epoch', i + 1)
         model_file = os.path.join(os.path.join(args.output_path, model_path), '.'.join([str(i + 1), 'model']))
         if os.path.exists(model_file):
-            wise_model.load_state_dict(torch.load(model_file, map_location='cpu'))
-            output = trainer.test_epoch('test', dataset, wise_collate_fn, args.batch_size)
+            PSCon_model.load_state_dict(torch.load(model_file, map_location='cpu'))
+            output = trainer.test_epoch('test', dataset, PSCon_collate_fn, args.batch_size)
 
-            t1_output = wise_model.intent(output['t1_output'])
-            t2_output = wise_model.state(output['t2_output'])
-            t3_output = wise_model.action(output['t3_output'])
-            t4_output = wise_model.query(output['t4_output'])
-            t5_output = wise_model.passage(output['t5_output'])
-            t6_output = wise_model.response(output['t6_output'])
+            t1_output = PSCon_model.intent(output['t1_output'])
+            t2_output = PSCon_model.state(output['t2_output'])
+            t3_output = PSCon_model.action(output['t3_output'])
+            t4_output = PSCon_model.query(output['t4_output'])
+            t5_output = PSCon_model.passage(output['t5_output'])
+            t6_output = PSCon_model.response(output['t6_output'])
             for j in range(output['id'].size(0)):
                 conv = copy.deepcopy(convs[output['id'][j].item()])
                 id = conv[-1]['msg_id']
@@ -443,19 +443,19 @@ def eval(args, prefix='valid', epochs=[], folder="withpretrain"):
         return
     tokenizer = char_tokenizer()
     if prefix == 'valid':
-        conversation_file = args.wise_valid_conversation_file
+        conversation_file = args.PSCon_valid_conversation_file
     elif prefix == 'train':
-        conversation_file = args.wise_train_conversation_file
+        conversation_file = args.PSCon_train_conversation_file
     elif prefix == 'test':
-        conversation_file = args.wise_test_conversation_file
+        conversation_file = args.PSCon_test_conversation_file
     elif prefix == 'testseen':
-        conversation_file = args.wise_testseen_conversation_file
+        conversation_file = args.PSCon_testseen_conversation_file
     elif prefix == 'testunseen':
-        conversation_file = args.wise_testunseen_conversation_file
+        conversation_file = args.PSCon_testunseen_conversation_file
     else:
         raise ValueError
     # folder = "withpretrain"
-    file_path = "".join(["WISE_", folder, "_infer_", prefix, "/"])
+    file_path = "".join(["PSCon_", folder, "_infer_", prefix, "/"])
     print("eval file ", file_path)
     print("gt file", conversation_file)
     if not os.path.exists(os.path.join(args.output_path, file_path)):
@@ -500,32 +500,32 @@ if __name__ == '__main__':
     parser.add_argument("--duconv_conversation_file", type=str,
                         default=os.path.join(dir_path, 'data/DuConv/DuConv.json'))
 
-    parser.add_argument("--wise_train_file", type=str,
-                        default='data/WISE/conversation_train_line.json')
-    parser.add_argument("--wise_valid_file", type=str,
-                        default='data/WISE/conversation_valid_line.json')
-    parser.add_argument("--wise_testunseen_file", type=str,
-                        default='data/WISE/conversation_testunseen_line.json')
-    parser.add_argument("--wise_testseen_file", type=str,
-                        default='data/WISE/conversation_testseen_line.json')
-    parser.add_argument("--wise_test_file", type=str,
-                        default='data/WISE/conversation_test_line.json')
-    parser.add_argument("--wise_intent", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/intent.txt'))
-    parser.add_argument("--wise_action", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/action.txt'))
-    parser.add_argument("--wise_document_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/document_line.json'))
-    parser.add_argument("--wise_train_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/WISE_train.json'))
-    parser.add_argument("--wise_valid_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/WISE_valid.json'))
-    parser.add_argument("--wise_testunseen_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/WISE_testunseen.json'))
-    parser.add_argument("--wise_testseen_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/WISE_testseen.json'))
-    parser.add_argument("--wise_test_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/WISE/WISE_test.json'))
+    parser.add_argument("--PSCon_train_file", type=str,
+                        default='data/PSCon/conversation_train_line.json')
+    parser.add_argument("--PSCon_valid_file", type=str,
+                        default='data/PSCon/conversation_valid_line.json')
+    parser.add_argument("--PSCon_testunseen_file", type=str,
+                        default='data/PSCon/conversation_testunseen_line.json')
+    parser.add_argument("--PSCon_testseen_file", type=str,
+                        default='data/PSCon/conversation_testseen_line.json')
+    parser.add_argument("--PSCon_test_file", type=str,
+                        default='data/PSCon/conversation_test_line.json')
+    parser.add_argument("--PSCon_intent", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/intent.txt'))
+    parser.add_argument("--PSCon_action", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/action.txt'))
+    parser.add_argument("--PSCon_document_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/document_line.json'))
+    parser.add_argument("--PSCon_train_conversation_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_train.json'))
+    parser.add_argument("--PSCon_valid_conversation_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_valid.json'))
+    parser.add_argument("--PSCon_testunseen_conversation_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_testunseen.json'))
+    parser.add_argument("--PSCon_testseen_conversation_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_testseen.json'))
+    parser.add_argument("--PSCon_test_conversation_file", type=str,
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_test.json'))
 
     parser.add_argument("--vocab", type=str, default=os.path.join(dir_path, 'data/vocab.txt'))
 

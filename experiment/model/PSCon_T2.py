@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch
 import copy
 
-class WISE_T4Model(nn.Module):
+class PSCon_T2Model(nn.Module):
     def __init__(self, t1, t2, t3, t4, t5, t6, response_len=50):
-        super(WISE_T4Model, self).__init__()
+        super(PSCon_T2Model, self).__init__()
 
         self.response_len=response_len
 
@@ -57,20 +57,19 @@ class WISE_T4Model(nn.Module):
 
     def forward(self, data, method):
         if method=='train':
-            common_output = {'selected_query': data['selected_query'], 'selected_passage': data['selected_passage'],
-                             'method': 'train'}
+            common_output = {'selected_query': data['selected_query'], 'selected_passage': data['selected_passage'], 'method': 'train'}
             output=self.do_forward(data['context'], data['query_candidate'], data['passage_candidate'], data['response'][:, :-1], common_output)
             # t1_output [batch_size, num_intents]    intent [batch_size, 1]
             t1_loss = self.t1.loss(output['t1_output'], data['intent'])
-            # t2_output [batch_size, context_len]    state [batch_size, context_len]    state_loss_mask [batch_size, 1]
-            t2_loss = self.t2.loss(output['t2_output'], data['state'], data['state_loss_mask'])
             # t3_output [batch_size, num_actions]    action [batch_size, 1]
             t3_loss = self.t3.loss(output['t3_output'], data['action'])
+            # t4_output [batch_size, num_queries]    selected_query [batch_size, queries]    query_loss_mask [batch_size, 1]
+            t4_loss = self.t4.loss(output['t4_output'], data['selected_query'], data['query_loss_mask'])
             # t5_output [batch_size, num_passages]    selected_passage [batch_size, passages]    passage_loss_mask [batch_size, 1]
             t5_loss = self.t5.loss(output['t5_output'], data['selected_passage'], data['passage_loss_mask'])
             # t6_output [batch_size, response_len - 1, vocab_size]    response [batch_size, response_len]
             t6_loss = self.t6.loss(output['t6_output'], data['response'])
-            return {'t1_loss':t1_loss, 't2_loss':t2_loss, 't3_loss':t3_loss, 't5_loss':t5_loss, 't6_loss':t6_loss}
+            return {'t1_loss':t1_loss, 't3_loss':t3_loss, 't4_loss':t4_loss, 't5_loss':t5_loss, 't6_loss':t6_loss}
         elif method == 'test':
             common_output = {'method': 'test'}
             output = self.do_forward(data['context'], data['query_candidate'], data['passage_candidate'], None, common_output)

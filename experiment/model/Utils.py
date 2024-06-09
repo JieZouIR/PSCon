@@ -11,7 +11,7 @@ def build_map(map_sequence, vocab_size=None):
     b_map_.requires_grad=False
     return b_map_
 
-def pairwise_binary_cross_entropy_with_logits(x, y, reduction='mean'):
+def pairPSCon_binary_cross_entropy_with_logits(x, y, reduction='mean'):
     x=x.unsqueeze(-1).expand(-1, -1, x.size(1))
     y=y.unsqueeze(-1).expand(-1, -1, y.size(1))
     x= x - x.transpose(1, 2)

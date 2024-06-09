@@ -9,9 +9,9 @@ from data.Utils import *
 import torch
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-class WISEDataset(Dataset):
+class PSConDataset(Dataset):
     def __init__(self, conv_files, doc_files, vocab2id, intent2id, action2id, tokenizer, context_len=200, query_len=10, num_queries=40, passage_len=100, num_passages=10, response_len=50):
-        super(WISEDataset, self).__init__()
+        super(PSConDataset, self).__init__()
         self.vocab2id=vocab2id
         self.intent2id=intent2id
         self.action2id=action2id
@@ -27,23 +27,23 @@ class WISEDataset(Dataset):
         self.samples=[]
 
         flag_name = ['train', 'valid', 'testunseen', 'testseen', 'test']
-        file_name = 'WISE.conversation.pkl'
+        file_name = 'PSCon.conversation.pkl'
         for fn in flag_name:
             if fn in conv_files[0]:
-                file_name = ''.join(['WISE.conversation.', fn, '.pkl'])
+                file_name = ''.join(['PSCon.conversation.', fn, '.pkl'])
                 break
 
         if os.path.exists(os.path.join(dir_path, file_name)):
             print("load... ", file_name)
             self.samples=torch.load(os.path.join(dir_path, file_name))
         else:
-            if os.path.exists(os.path.join(dir_path, 'WISE.document.pkl')):
-                self.passages = torch.load(os.path.join(dir_path, 'WISE.document.pkl'))
+            if os.path.exists(os.path.join(dir_path, 'PSCon.document.pkl')):
+                self.passages = torch.load(os.path.join(dir_path, 'PSCon.document.pkl'))
             else:
                 for file in doc_files:
                     self.passages = load_passage(file, tokenizer, self.passages)
-                if not os.path.exists(os.path.join(dir_path, 'WISE.document.pkl')):
-                    torch.save(self.passages, os.path.join(dir_path, 'WISE.document.pkl'))
+                if not os.path.exists(os.path.join(dir_path, 'PSCon.document.pkl')):
+                    torch.save(self.passages, os.path.join(dir_path, 'PSCon.document.pkl'))
 
             for file in conv_files:
                 self.load(file)
@@ -198,7 +198,7 @@ class WISEDataset(Dataset):
             return 'None'
 
 
-def wise_collate_fn(data):
+def PSCon_collate_fn(data):
     id_tensor, context_tensor, intent_tensor, state_tensor, query_candidate_tensor, passage_candidate_tensor, action_tensor, selected_query_tensor, selected_passage_tensor, response_tensor, state_loss_mask, query_loss_mask, passage_loss_mask = zip(*data)
     # id [batch_size]
     # context [batch_size, context_len]
@@ -226,11 +226,11 @@ def wise_collate_fn(data):
             'passage_loss_mask': torch.stack(passage_loss_mask)
             }
 
-def prepare_wise_dataset(args):
+def prepare_PSCon_dataset(args):
     # 处理原始对话数据，将一段多轮对话分割成多段“单轮”对话
-    if not os.path.exists(args.wise_train_conversation_file):
-        train_file = codecs.open(args.wise_train_conversation_file, 'w', 'utf-8')
-        with codecs.open(args.wise_train_file) as f:
+    if not os.path.exists(args.PSCon_train_conversation_file):
+        train_file = codecs.open(args.PSCon_train_conversation_file, 'w', 'utf-8')
+        with codecs.open(args.PSCon_train_file) as f:
             for line in f:
                 convs = json.loads(line)
                 for i in range(len(convs['conversations'])):
@@ -239,8 +239,8 @@ def prepare_wise_dataset(args):
                         train_file.write(json.dumps(sample, ensure_ascii=False) + os.linesep)
         train_file.close()
 
-        valid_file = codecs.open(args.wise_valid_conversation_file, 'w', 'utf-8')
-        with codecs.open(args.wise_valid_file) as f:
+        valid_file = codecs.open(args.PSCon_valid_conversation_file, 'w', 'utf-8')
+        with codecs.open(args.PSCon_valid_file) as f:
             for line in f:
                 convs = json.loads(line)
                 for i in range(len(convs['conversations'])):
@@ -249,8 +249,8 @@ def prepare_wise_dataset(args):
                         valid_file.write(json.dumps(sample, ensure_ascii=False) + os.linesep)
         valid_file.close()
 
-        test_file = codecs.open(args.wise_test_conversation_file, 'w', 'utf-8')
-        with codecs.open(args.wise_test_file) as f:
+        test_file = codecs.open(args.PSCon_test_conversation_file, 'w', 'utf-8')
+        with codecs.open(args.PSCon_test_file) as f:
             for line in f:
                 convs = json.loads(line)
                 for i in range(len(convs['conversations'])):
@@ -259,8 +259,8 @@ def prepare_wise_dataset(args):
                         test_file.write(json.dumps(sample, ensure_ascii=False) + os.linesep)
         test_file.close()
 
-        testunseen_file = codecs.open(args.wise_testunseen_conversation_file, 'w', 'utf-8')
-        with codecs.open(args.wise_testunseen_file) as f:
+        testunseen_file = codecs.open(args.PSCon_testunseen_conversation_file, 'w', 'utf-8')
+        with codecs.open(args.PSCon_testunseen_file) as f:
             for line in f:
                 convs = json.loads(line)
                 for i in range(len(convs['conversations'])):
@@ -269,8 +269,8 @@ def prepare_wise_dataset(args):
                         testunseen_file.write(json.dumps(sample, ensure_ascii=False) + os.linesep)
         testunseen_file.close()
 
-        testseen_file = codecs.open(args.wise_testseen_conversation_file, 'w', 'utf-8')
-        with codecs.open(args.wise_testseen_file) as f:
+        testseen_file = codecs.open(args.PSCon_testseen_conversation_file, 'w', 'utf-8')
+        with codecs.open(args.PSCon_testseen_file) as f:
             for line in f:
                 convs = json.loads(line)
                 for i in range(len(convs['conversations'])):
