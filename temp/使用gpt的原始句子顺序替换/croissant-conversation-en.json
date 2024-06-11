@@ -13,7 +13,7 @@
         "contentUrl": ".\\conversation_en_croissant_data.json",
         "description": "PSCon English conversation data",
         "encodingFormat": "application/json",
-        "sha256": "b955a4e7453e997649d27f389d37ad94b8b6e2c8b261ed64101ddab4cf03e79e"
+        "sha256": "3d7641a8bb3a0233310976fe2b5b49fef60e855d2046b27e510e9c4f7cdeb57d"
       }
     ],
     "recordSet": [
