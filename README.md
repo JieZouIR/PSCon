@@ -14,7 +14,7 @@ We take data privacy very seriously. All of the data you access through this rep
 **1. Clone**
 
 ```
-git clone https://anonymous.4open.science/r/PSCon-06B3.git
+git clone https://anonymous.4open.science/r/PSCon-202B.git
 cd PSCon/dataset
 ```
 
