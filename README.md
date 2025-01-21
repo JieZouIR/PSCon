@@ -11,12 +11,16 @@ The dataset is licensed under the CC-BY-4.0 license.
 We take data privacy very seriously. All of the data you access through this repository has been carefully prepared to prevent any privacy breaches or data leakage. You can use this data with confidence, knowing that all necessary precautions have been taken.
 
 ## Download
+**1. Clone**
 
 ```
-git clone https://github.com/JieZouIR/PSCon.git
+git clone https://anonymous.4open.science/r/PSCon-06B3.git
 cd PSCon/dataset
 ```
 
+**2. Download**
+
+You can `Download Repository` or open the file data to `Download file` in the upper right corner.
 ## PSCon Structure
 
 ```
