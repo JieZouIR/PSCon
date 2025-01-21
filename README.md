@@ -28,12 +28,6 @@ PSCon
     ├── conversation_en.json
     ├── croissant-conversation-en.json
     └── knowledgeGraph_en.json
-└── system
-    ├── chat-labelling-backend
-    ├── chat-labelling-frontend
-    ├── chat-labelling-proxy-server
-    ├── resources
-    └── README.md
 └── experiment
     ├── common
     ├── data
@@ -49,13 +43,6 @@ PSCon
   - `croissant-conversation-cn.json`, `croissant-conversation-en.json` are the Croissant Format.
   - `knowledgeGraph_cn.json`, `knowledgeGraph_en.json` are the Chinese and English knowledge graph data, respectively. The knowledge graph consists of users, products, and their details.
   
-- `system`
-  - `chat-labelling-backend` is the back-end project of the system, which is responsible for data storage and management and business logic processing.
-  - `chat-labelling-frontend` is the front-end project of the system, responsible for UI design and user interaction
-  - `chat-labelling-proxy-server` is the proxy project of the system and is responsible for the processing of the product search interface.
-  - `resources` is the resource library of the system, which stores the resources commonly used at the front and back ends.
-  - `README.md` is the instruction document for the system.
-
 - `experiment`
   - `common` stores the basic class of `experiment`.
   - `data` stores all the data of `experiment`.
