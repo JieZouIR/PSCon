@@ -12,6 +12,15 @@ from sklearn.metrics import ndcg_score, average_precision_score
 
 
 def evaluate_T1(rs_t1, gt_t1):
+    """
+    Evaluate Task 1: Intent Classification
+    Calculates precision, recall and F1 score for intent classification
+    Args:
+        rs_t1: predicted results
+        gt_t1: ground truth results
+    Returns:
+        Dictionary containing precision, recall and F1 scores for each intent and their averages
+    """
     # rs_t1 contains predicted results
     # gt_t1 contains ground truth results
     # macro
@@ -66,6 +75,16 @@ def evaluate_T1(rs_t1, gt_t1):
 
 
 def evaluate_T2(rs_t2, gt_t2, tokenizer):
+    """
+    Evaluate Task 2: State Generation
+    Calculates BLEU and ROUGE scores for generated states
+    Args:
+        rs_t2: predicted results
+        gt_t2: ground truth results
+        tokenizer: tokenizer function for text processing
+    Returns:
+        Dictionary containing BLEU and ROUGE scores for each action type and their averages
+    """
     actions = ['Clarify', 'Recommend']
 
     bleu_dict = {}
@@ -118,6 +137,15 @@ def evaluate_T2(rs_t2, gt_t2, tokenizer):
 
 
 def evaluate_T3(rs_t3, gt_t3):
+    """
+    Evaluate Task 3: Action Classification
+    Calculates precision, recall and F1 score for action classification
+    Args:
+        rs_t3: predicted results
+        gt_t3: ground truth results
+    Returns:
+        Dictionary containing precision, recall and F1 scores for each action and their averages
+    """
     count_correct = {}
     count_rs = {}
     count_gt = {}
@@ -170,6 +198,15 @@ def evaluate_T3(rs_t3, gt_t3):
 
 
 def ndcg(label_list, pred_list, k):
+    """
+    Calculate Normalized Discounted Cumulative Gain (NDCG) score
+    Args:
+        label_list: list of ground truth relevance scores
+        pred_list: list of predicted scores
+        k: number of items to consider
+    Returns:
+        Mean NDCG score across all queries
+    """
     ndcg_scores = []
 
     for labels, preds in zip(label_list, pred_list):
@@ -204,6 +241,13 @@ def ndcg(label_list, pred_list, k):
 
 
 def create_pred_list(label_list):
+    """
+    Create prediction list with decreasing scores
+    Args:
+        label_list: list of ground truth labels
+    Returns:
+        List of predictions with normalized scores
+    """
     pred_list = []
 
     for group_labels in label_list:
@@ -224,6 +268,14 @@ def create_pred_list(label_list):
 
 
 def compute_map(labels, outputs):
+    """
+    Calculate Mean Average Precision (MAP)
+    Args:
+        labels: ground truth labels
+        outputs: predicted scores
+    Returns:
+        Mean Average Precision score
+    """
     y_true = labels
     y_pred = outputs
     AP = []
@@ -233,6 +285,15 @@ def compute_map(labels, outputs):
 
 
 def evaluate_T4(rs_t4, gt_t4):
+    """
+    Evaluate Task 4: Query Ranking
+    Calculates NDCG and MAP scores for query ranking
+    Args:
+        rs_t4: predicted results
+        gt_t4: ground truth results
+    Returns:
+        Dictionary containing NDCG scores at different ranks and MAP score
+    """
     actions = ['Clarify', 'Recommend']
     # actions=['Clarify']
 
@@ -283,6 +344,15 @@ def evaluate_T4(rs_t4, gt_t4):
 
 
 def evaluate_T5(rs_t5, gt_t5):
+    """
+    Evaluate Task 5: Passage Ranking
+    Calculates NDCG and MAP scores for passage ranking
+    Args:
+        rs_t5: predicted results
+        gt_t5: ground truth results
+    Returns:
+        Dictionary containing NDCG scores at different ranks and MAP score
+    """
     actions = ['Recommend']
 
     label_list = []
@@ -338,6 +408,16 @@ def evaluate_T5(rs_t5, gt_t5):
 
 
 def evaluate_T6(rs_t6, gt_t6, tokenizer):
+    """
+    Evaluate Task 6: Response Generation
+    Calculates BLEU and ROUGE scores for generated responses
+    Args:
+        rs_t6: predicted results
+        gt_t6: ground truth results
+        tokenizer: tokenizer function for text processing
+    Returns:
+        Dictionary containing BLEU and ROUGE scores for each action type and their averages
+    """
     actions = ['Clarify', 'Recommend']
 
     bleu_dict = {}
@@ -382,6 +462,15 @@ def evaluate_T6(rs_t6, gt_t6, tokenizer):
 
 
 def evaluate(rs_files, gt_files, tokenizer):
+    """
+    Main evaluation function that runs all task evaluations
+    Args:
+        rs_files: list of files containing predicted results
+        gt_files: list of files containing ground truth results
+        tokenizer: tokenizer function for text processing
+    Returns:
+        Dictionary containing all evaluation metrics
+    """
     rs = {}
     for file in rs_files:
         file_name = os.path.basename(file)
@@ -420,11 +509,5 @@ def evaluate(rs_files, gt_files, tokenizer):
     t4 = evaluate_T4(rs, gt)
     t5 = evaluate_T5(rs, gt)
     t6 = evaluate_T6(rs, gt, tokenizer)
-
-    current_directory = os.getcwd()
-    output_file_path = os.path.join(current_directory, "rsgt.txt")
-    with open(output_file_path, "w") as file:
-        file.write(f"rs:{rs}\n")
-        file.write(f"gt:{gt}\n")
 
     return {**t1, **t2, **t3, **t4, **t5, **t6}

@@ -9,6 +9,7 @@ from torch.nn.modules.dropout import Dropout
 from torch.nn.modules.linear import Linear
 from torch.nn.modules.normalization import LayerNorm
 
+# Helper function to get activation function
 def _get_activation_fn(activation):
     if activation == "relu":
         return F.relu
@@ -17,18 +18,24 @@ def _get_activation_fn(activation):
     else:
         raise RuntimeError("activation should be relu/gelu, not %s." % activation)
 
+# Single layer of Transformer decoder
 class TransformerDecoderLayer(Module):
     def __init__(self, hidden_size, num_head, dim_feedforward=512, dropout=0.1, activation="relu"):
         super(TransformerDecoderLayer, self).__init__()
+        # Self-attention mechanism
         self.self_attn = nn.MultiheadAttention(hidden_size, num_head, dropout=dropout)
+        # Memory attention mechanism
         self.memory_attn = nn.MultiheadAttention(hidden_size, num_head, dropout=dropout)
 
+        # Dropout and normalization layers for self-attention
         self.self_dropout=Dropout(dropout)
         self.self_norm=LayerNorm(hidden_size)
 
+        # Dropout and normalization layers for memory attention
         self.memory_dropout = Dropout(dropout)
         self.memory_norm = LayerNorm(hidden_size)
 
+        # Feed-forward network components
         self.norm = LayerNorm(hidden_size)
         self.linear1 = Linear(hidden_size, dim_feedforward)
         self.linear2 = Linear(dim_feedforward, hidden_size, bias=False)
@@ -38,17 +45,21 @@ class TransformerDecoderLayer(Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(self, tgt, memory, tgt_mask=None, memory_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None):
+        # Transpose input tensors for attention computation
         tgt = tgt.transpose(0, 1)
         memory = memory.transpose(0, 1)
 
+        # Self-attention block
         tgt = self.self_norm(tgt)
         tgt2, tgt_weight = self.self_attn(tgt, tgt, tgt, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)
         tgt = tgt + self.self_dropout(tgt2)
 
+        # Memory attention block
         tgt = self.memory_norm(tgt)
         tgt2, memory_weight = self.memory_attn(tgt, memory, memory, attn_mask=memory_mask, key_padding_mask=memory_key_padding_mask)
         tgt = tgt + self.memory_dropout(tgt2)
 
+        # Feed-forward network block
         tgt = self.norm(tgt)
         if hasattr(self, "activation"):
             tgt2 = self.linear2(self.dropout1(self.activation(self.linear1(tgt))))
@@ -57,9 +68,11 @@ class TransformerDecoderLayer(Module):
         tgt = tgt + self.dropout2(tgt2)
         return tgt.transpose(0, 1), tgt_weight, memory_weight
 
+# Helper function to create multiple copies of a module
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
 
+# Complete Transformer decoder implementation
 class TransformerDecoder(Module):
     def __init__(self, decoder_layer, num_layer):
         super(TransformerDecoder, self).__init__()
@@ -69,6 +82,7 @@ class TransformerDecoder(Module):
     def forward(self, tgt, memory, tgt_mask=None, memory_mask=None, tgt_key_padding_mask=None, memory_key_padding_mask=None):
         output = tgt
 
+        # Store outputs and attention weights from each layer
         outputs=[]
         output_weights=[]
         memory_weights=[]
@@ -80,6 +94,5 @@ class TransformerDecoder(Module):
             outputs.append(output)
             output_weights.append(output_weight)
             memory_weights.append(memory_weight)
-
 
         return outputs, output_weights, memory_weights

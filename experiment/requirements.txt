@@ -5,3 +5,4 @@ torch==1.7.1
 torchtext==0.8.1
 torchvision==0.8.2
 transformers==4.5.0
+scikit-learn==1.0.2

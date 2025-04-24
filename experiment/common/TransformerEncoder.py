@@ -8,6 +8,7 @@ from torch.nn.modules.normalization import LayerNorm
 import copy
 from torch.nn.modules.container import ModuleList
 
+# Helper function to get activation function
 def _get_activation_fn(activation):
     if activation == "relu":
         return F.relu
@@ -16,13 +17,17 @@ def _get_activation_fn(activation):
     else:
         raise RuntimeError("activation should be relu/gelu, not %s." % activation)
 
+# Single layer of Transformer encoder
 class TransformerEncoderLayer(Module):
     def __init__(self, hidden_size, num_heads, dim_feedforward=512, dropout=0.1, activation="relu"):
         super(TransformerEncoderLayer, self).__init__()
+        # Multi-head self-attention mechanism
         self.self_attn = nn.MultiheadAttention(hidden_size, num_heads, dropout=dropout)
+        # Feed-forward network
         self.linear1 = Linear(hidden_size, dim_feedforward)
         self.linear2 = Linear(dim_feedforward, hidden_size, bias=False)
 
+        # Layer normalization and dropout
         self.norm1 = LayerNorm(hidden_size)
         self.norm2 = LayerNorm(hidden_size)
         self.dropout1 = Dropout(dropout)
@@ -32,12 +37,15 @@ class TransformerEncoderLayer(Module):
         self.activation = _get_activation_fn(activation)
 
     def forward(self, src, src_mask=None, src_key_padding_mask=None):
+        # Transpose for attention computation
         src = src.transpose(0, 1)
 
+        # Self-attention block
         src = self.norm1(src)
         src2, weight = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)
         src = src + self.dropout1(src2)
 
+        # Feed-forward block
         src = self.norm2(src)
         if hasattr(self, "activation"):
             src2 = self.linear2(self.dropout2(self.activation(self.linear1(src))))
@@ -45,12 +53,13 @@ class TransformerEncoderLayer(Module):
             src2 = self.linear2(self.dropout2(F.relu(self.linear1(src))))
         src = src + self.dropout3(src2)
 
-        # src.transpose(0,1) [batch_size*num_seq, seq_len, hidden_size]
         return src.transpose(0, 1), weight
 
+# Helper function to create multiple copies of a module
 def _get_clones(module, N):
     return ModuleList([copy.deepcopy(module) for i in range(N)])
 
+# Complete Transformer encoder with multiple layers
 class TransformerEncoder(Module):
     def __init__(self, encoder_layer, num_layers):
         super(TransformerEncoder, self).__init__()
@@ -60,6 +69,7 @@ class TransformerEncoder(Module):
     def forward(self, src, src_mask=None, src_key_padding_mask=None):
         output = src
 
+        # Store outputs and attention weights from each layer
         outputs=[]
         weights=[]
         for i in range(self.num_layers):

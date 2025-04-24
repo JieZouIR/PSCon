@@ -8,24 +8,35 @@ import sys
 import os
 
 class DataParallel(object):
+    """
+    A wrapper class for distributed data parallel training.
+    Handles model distribution across multiple GPUs and training/testing operations.
+    """
     def __init__(self, model, optimizer, scheduler,  local_rank):
         super(DataParallel, self).__init__()
         self.local_rank = local_rank
         self.optimizer = optimizer
         self.scheduler = scheduler
 
+        # Set CUDA device for the current process
         if local_rank is not None and torch.cuda.is_available():
             torch.cuda.set_device(local_rank)
 
+        # Move model to GPU if available
         if torch.cuda.is_available():
             self.model = model.cuda()
         else:
             self.model = model
 
+        # Wrap model with DistributedDataParallel for multi-GPU training
         if torch.cuda.is_available() and local_rank is not None:
             self.model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
     def serialize(self, epoch, path):
+        """
+        Save model state dict to disk.
+        Only rank 0 process saves the model in distributed training.
+        """
         if torch.cuda.is_available() and self.local_rank != 0:
             return
         if not os.path.exists(path):
@@ -36,6 +47,10 @@ class DataParallel(object):
             torch.save(self.model.state_dict(), os.path.join(path, '.'.join([str(epoch), 'model'])))
 
     def train_epoch(self, method, train_dataset, train_collate_fn, batch_size, epoch):
+        """
+        Train the model for one epoch.
+        Handles data loading, forward pass, backward pass, and optimization.
+        """
         self.model.train()
         if torch.cuda.is_available():
             sampler = DistributedSampler(train_dataset)
@@ -49,30 +64,29 @@ class DataParallel(object):
         losses = dict()
         count = 0
         for j, data in enumerate(train_loader, 0):
+            # Move data to GPU if available
             if torch.cuda.is_available():
                 data_cuda = dict()
                 for key, value in data.items():
-                    # print(f"key:{key}")
                     if isinstance(value, torch.Tensor):
-                        # print(f"key0:{key}")
                         data_cuda[key] = value.cuda()
                     else:
-                        # print(f"key1:{key}")
                         data_cuda[key] = value
                 data = data_cuda
 
+            # Forward pass
             loss = self.model(data, method)
             sum_loss = torch.cat([loss[k].mean().reshape(1) for k in loss]).sum()
 
+            # Backward pass and optimization
             sum_loss.backward()
-
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1)
-
             self.optimizer.step()
             if self.scheduler is not None:
                 self.scheduler.step()
             self.optimizer.zero_grad()
 
+            # Log training progress every 100 batches
             count+=1
             if count%(100)==0:
                 elapsed_time = time.time() - start_time
@@ -83,6 +97,7 @@ class DataParallel(object):
                 print(output)
                 sys.stdout.flush()
 
+            # Accumulate losses for the epoch
             if 'id' not in losses:
                 losses['id']=data['id'].cpu()
             else:
@@ -94,10 +109,13 @@ class DataParallel(object):
                 else:
                     losses[k] = torch.cat([losses[k], v.cpu()], dim=0)
 
-
         return losses
 
     def test_epoch(self, method, test_dataset, test_collate_fn, batch_size):
+        """
+        Evaluate the model on test dataset.
+        Performs forward pass without gradient computation.
+        """
         self.model.eval()
         with torch.no_grad():
             if torch.cuda.is_available():
@@ -108,6 +126,7 @@ class DataParallel(object):
 
             outputs = dict()
             for k, data in enumerate(test_loader, 0):
+                # Move data to GPU if available
                 if torch.cuda.is_available():
                     data_cuda = dict()
                     for key, value in data.items():
@@ -117,6 +136,7 @@ class DataParallel(object):
                             data_cuda[key] = value
                     data = data_cuda
 
+                # Forward pass
                 output = self.model(data, method)
                 if 'id' not in outputs:
                     outputs['id'] = data['id'].cpu()
