@@ -15,7 +15,7 @@ class KdConvModel(nn.Module):
         self.t5 = t5
         self.t6 = t6
 
-    def do_forward(self, context, query, passage, response, common_output):
+    def do_forward(self, context, query, product, response, common_output):
 
         if 't1_output' not in common_output:
             self.t1(context, common_output)
@@ -24,13 +24,13 @@ class KdConvModel(nn.Module):
             self.t2(context, common_output)
 
         if 't3_output' not in common_output:
-            self.t3(context, query, passage, common_output)
+            self.t3(context, query, product, common_output)
 
         if 't4_output' not in common_output:
             self.t4(context, query, common_output)
 
         if response is not None:
-            self.t6(context, query, passage, response, common_output)
+            self.t6(context, query, product, response, common_output)
 
         return common_output
 

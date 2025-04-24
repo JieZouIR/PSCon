@@ -15,18 +15,18 @@ from data.PSCon.PSCon import *
 from data.DuConv.DuConv import *
 from data.KdConv.KdConv import *
 from data.Utils import *
-from model.T1 import *
-from model.T2 import *
-from model.T3 import *
-from model.T4 import *
-from model.T5 import *
-from model.T6 import *
+from model.T1 import *  # Intent Detection model
+from model.T2 import *  # Keyword Extraction model
+from model.T3 import *  # Action Prediction model
+from model.T4 import *  # Query Selection model
+from model.T5 import *  # Item Ranking model
+from model.T6 import *  # Response Generation model
 from model.PSCon_T1 import *
 from model.PSCon_T2 import *
 from model.PSCon_T3 import *
 from model.PSCon_T4 import *
 from model.PSCon_T5 import *
-from model.PSCon_T6 import *
+from model.PSCon import *
 from model.DuConv import *
 from model.KdConv import *
 
@@ -61,6 +61,7 @@ def prepare_dataset(args):
 
 
 def build_modules(args):
+    """Build core transformer modules for the model"""
     vocab2id, id2vocab = load_vocab(args.vocab)
     word_embedding = nn.Embedding(len(vocab2id), args.hidden_size, padding_idx=0)
     position_embedding = PositionalEmbedding(args.hidden_size, dropout=args.dropout, max_len=200)
@@ -77,17 +78,19 @@ def build_modules(args):
 
 
 def build_PSCon_model(args):
+    """Build the complete PSCon model with all components"""
     PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
     PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
     vocab2id, id2vocab, embedding, encoder, decoder, generator = build_modules(args)
 
-    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)
-    t2 = T2(embedding, encoder, args.hidden_size, id2vocab)
-    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)
-    t4 = T4(embedding, encoder, args.hidden_size)
-    t5 = T5(embedding, encoder, args.hidden_size)
-    t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)
+    # Initialize all model components
+    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)  # Intent Detection model
+    t2 = T2(embedding, encoder, args.hidden_size, id2vocab)  # Keyword Extraction model
+    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)  # Action Prediction model
+    t4 = T4(embedding, encoder, args.hidden_size)  # Query Selection model
+    t5 = T5(embedding, encoder, args.hidden_size)  # Item Ranking model
+    t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)  # Response Generation model
 
     PSCon_model = PSConModel(t1, t2, t3, t4, t5, t6)
     init_params(PSCon_model)
@@ -346,9 +349,11 @@ def finetune(args):
 
 
 def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
+    """Run inference on the specified dataset with the trained model"""
     tokenizer = char_tokenizer()
     PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id = build_PSCon_model(args)
 
+    # Select appropriate dataset based on prefix
     if prefix == 'valid':
         print("infer valid")
         conversation_file = args.PSCon_valid_conversation_file
@@ -402,7 +407,7 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
             t2_output = PSCon_model.state(output['t2_output'])
             t3_output = PSCon_model.action(output['t3_output'])
             t4_output = PSCon_model.query(output['t4_output'])
-            t5_output = PSCon_model.passage(output['t5_output'])
+            t5_output = PSCon_model.product(output['t5_output'])
             t6_output = PSCon_model.response(output['t6_output'])
             for j in range(output['id'].size(0)):
                 conv = copy.deepcopy(convs[output['id'][j].item()])
@@ -423,25 +428,27 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
                 conv[-1]['query_ranking'] = sorted(conv[-1]['selected_query'], key=lambda x: x[1], reverse=True)
 
                 current_directory = os.getcwd()
-                output_file_path = os.path.join(current_directory, "t5&passage_out.txt")
+                output_file_path = os.path.join(current_directory, "t5&product_out.txt")
                 with open(output_file_path, "a") as file2:
                     file2.write(f"t5:\n{t5_output}\n")
                     file2.write(f"pa:\n{dataset}\n")
                 with open(output_file_path, "a") as file2:
-                    file2.write(f"conv[-1]['selected_passage']old:\n{conv[-1]['selected_passage']}\n")
+                    file2.write(f"conv[-1]['selected_product']old:\n{conv[-1]['selected_product']}\n")
 
-                conv[-1]['selected_passage'] = []
+                conv[-1]['selected_product'] = []
                 for index in range(len(t5_output[j])):
-                    conv[-1]['selected_passage'].append((dataset.passage(id, index), t5_output[j][index].item()))
-                # conv[-1]['selected_passage'] = sorted(conv[-1]['selected_passage'], key=lambda x: x[1], reverse=True)
-                conv[-1]['passage_ranking'] = sorted(conv[-1]['selected_passage'], key=lambda x: x[1], reverse=True)
+                    conv[-1]['selected_product'].append((dataset.product(id, index), t5_output[j][index].item()))
+                # conv[-1]['selected_product'] = sorted(conv[-1]['selected_product'], key=lambda x: x[1], reverse=True)
+                conv[-1]['product_ranking'] = sorted(conv[-1]['selected_product'], key=lambda x: x[1], reverse=True)
                 conv[-1]['response'] = t6_output[j]
 
 
 def eval(args, prefix='valid', epochs=[], folder="withpretrain"):
+    """Evaluate model performance on the specified dataset"""
     if args.local_rank != 0:
         return
     tokenizer = char_tokenizer()
+    # Select appropriate dataset for evaluation
     if prefix == 'valid':
         conversation_file = args.PSCon_valid_conversation_file
     elif prefix == 'train':
