@@ -12,7 +12,7 @@ We recommend to use conda for installing the requirements. If you haven't instal
    conda create env -n PSCon
    ```
 
-   In the environment, a python version >3.6 should be used.
+   In the environment, the python version is 3.7.
 
 + Activate the environment
 
