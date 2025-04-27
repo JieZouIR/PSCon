@@ -29,13 +29,6 @@ PSCon
     ├── conversation_en.json
     ├── croissant-conversation-en.json
     └── knowledgeGraph_en.json
-└── experiment
-    ├── common
-    ├── data
-    ├── evaluation
-    ├── model
-    ├── Run.py
-    └── README.md
 ```
 
 - The `PSCon` is the root directory. Within this, the `dataset` directory contains various JSON files that are part of the `PSCon` dataset. 
