@@ -18,9 +18,6 @@ git clone https://github.com/JieZouIR/PSCon.git
 cd PSCon/dataset
 ```
 
-**2. Download**
-
-You can `Download Repository` or open the file data to `Download file` in the upper right corner.
 ## PSCon Structure
 
 ```
@@ -41,19 +38,11 @@ PSCon
     └── README.md
 ```
 
-- The `PSCon` is the root directory. Within this, the `dataset` directory contains various JSON files that are part of the `PSCon` dataset. `system` is the `PSCon` dataset collection system. `experiment` is the model folder for `PSCon`.
+- The `PSCon` is the root directory. Within this, the `dataset` directory contains various JSON files that are part of the `PSCon` dataset. 
 - `dataset`
   - `conversation_cn.json`, `conversation_en.json` are the Chinese and English conversation data, respectively.
   - `croissant-conversation-cn.json`, `croissant-conversation-en.json` are the Croissant Format.
   - `knowledgeGraph_cn.json`, `knowledgeGraph_en.json` are the Chinese and English knowledge graph data, respectively. The knowledge graph consists of users, products, and their details.
-  
-- `experiment`
-  - `common` stores the basic class of `experiment`.
-  - `data` stores all the data of `experiment`.
-  - `evaluation` stores the evaluation code of `experiment`.
-  - `model` stores the model files of the `experiment`.
-  - `Run.py` is the main program of `experiment`.
-  - `README.md` describes how to run the `experiment`.
 
 
 ## Dataset Description
