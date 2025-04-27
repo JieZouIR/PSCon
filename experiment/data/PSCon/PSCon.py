@@ -10,7 +10,7 @@ import torch
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class PSConDataset(Dataset):
-    def __init__(self, conv_files, doc_files, vocab2id, intent2id, action2id, tokenizer, context_len=200, query_len=10, num_queries=40, passage_len=100, num_passages=10, response_len=50):
+    def __init__(self, conv_files, doc_files, vocab2id, intent2id, action2id, tokenizer, context_len=200, query_len=10, num_queries=45, passage_len=100, num_passages=10, response_len=50):
         super(PSConDataset, self).__init__()
         self.vocab2id=vocab2id
         self.intent2id=intent2id
@@ -27,23 +27,23 @@ class PSConDataset(Dataset):
         self.samples=[]
 
         flag_name = ['train', 'valid', 'testunseen', 'testseen', 'test']
-        file_name = 'PSCon_old.conversation.pkl'
+        file_name = 'PSCon.conversation.pkl'
         for fn in flag_name:
             if fn in conv_files[0]:
-                file_name = ''.join(['PSCon_old.conversation.', fn, '.pkl'])
+                file_name = ''.join(['PSCon.conversation.', fn, '.pkl'])
                 break
 
         if os.path.exists(os.path.join(dir_path, file_name)):
             print("load... ", file_name)
             self.samples=torch.load(os.path.join(dir_path, file_name))
         else:
-            if os.path.exists(os.path.join(dir_path, 'PSCon_old.document.pkl')):
-                self.passages = torch.load(os.path.join(dir_path, 'PSCon_old.document.pkl'))
+            if os.path.exists(os.path.join(dir_path, 'PSCon.document.pkl')):
+                self.passages = torch.load(os.path.join(dir_path, 'PSCon.document.pkl'))
             else:
                 for file in doc_files:
                     self.passages = load_passage(file, tokenizer, self.passages)
-                if not os.path.exists(os.path.join(dir_path, 'PSCon_old.document.pkl')):
-                    torch.save(self.passages, os.path.join(dir_path, 'PSCon_old.document.pkl'))
+                if not os.path.exists(os.path.join(dir_path, 'PSCon.document.pkl')):
+                    torch.save(self.passages, os.path.join(dir_path, 'PSCon.document.pkl'))
 
             for file in conv_files:
                 self.load(file)
@@ -99,7 +99,6 @@ class PSConDataset(Dataset):
                 for i in range(len(query_candidate)):
                     query = [ '[Q-CLS]'] + self.tokenizer(query_candidate[i])
                     if len(query) < self.query_len:
-                        print(f"query:{query}")
                         query += ['[PAD]'] * (self.query_len - len(query))
                     else:
                         query = query[:self.query_len]
@@ -177,7 +176,6 @@ class PSConDataset(Dataset):
                     passage_loss_mask = torch.tensor([0]).long()
 
                 self.samples.append(((id, context, intent, state, query_candidate, passage_candidate, action, selected_query, selected_passage, response), (id_tensor, context_tensor, intent_tensor, state_tensor, query_candidate_tensor, passage_candidate_tensor, action_tensor, selected_query_tensor, selected_passage_tensor, response_tensor, state_loss_mask, query_loss_mask, passage_loss_mask)))
-                # print(self.samples)
 
     def __getitem__(self, index):
         return self.samples[index][1]

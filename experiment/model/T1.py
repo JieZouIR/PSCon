@@ -43,12 +43,12 @@ class T1(nn.Module):
         # context_weights 4 * [batch_size, context_len, context_len]
         context_states, context_weights = self.t1_encoder(context_emb, src_key_padding_mask=context.eq(0))
         
-        # Save intermediate outputs for debugging
-        current_directory = os.getcwd()
-        output_file_path = os.path.join(current_directory, "T1out.txt")
-        with open(output_file_path, "a") as file:
-            file.write(f"context_states:{context_states}\n")
-            file.write(f"context_states[-1][:, 0]:{context_states[-1][:, 0]}\n\n\n")
+        # # Save intermediate outputs for debugging
+        # current_directory = os.getcwd()
+        # output_file_path = os.path.join(current_directory, "T1out.txt")
+        # with open(output_file_path, "a") as file:
+        #     file.write(f"context_states:{context_states}\n")
+        #     file.write(f"context_states[-1][:, 0]:{context_states[-1][:, 0]}\n\n\n")
         
         # -1 means the last layer of transformers
         # parameters [batch_size, hidden_size], 0 means I-CLS of context

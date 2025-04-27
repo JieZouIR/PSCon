@@ -6,7 +6,7 @@ import os
 class T3(nn.Module):
     """
     T3 model for action prediction
-    This model takes context, query, and product as input and predicts the action
+    This model takes context, query, and passage as input and predicts the action
     """
     def __init__(self, embedding, t3_encoder, hidden_size, id2action):
         super(T3, self).__init__()
@@ -19,17 +19,21 @@ class T3(nn.Module):
 
         # Linear layer for action prediction
         self.linear = nn.Linear(hidden_size, len(id2action), bias=False)
+        
 
     def label(self, t3_output):
         # t3_output [batch_size], translate action_id to corresponding action
         # format of return ["action1", "action2", ...]
         return [self.id2action[t3_output[i].item()] for i in range(t3_output.size(0))]
 
-    def forward(self, context, query, product, common_output):
+    def forward(self, context, query, passage, common_output):
         # Get batch size and context length
         batch_size, context_len = context.size()
         # Get context embeddings
         context_emb = self.embedding(context)
+        # context_states 4 * [batch_size, context_len, hidden_size]
+        # context_weights 4 * [batch_size, context_len, context_len]
+        context_states, context_weights = self.t3_encoder(context_emb, src_key_padding_mask=context.eq(0))
         features = []
         
         # Process query if exists
@@ -63,33 +67,36 @@ class T3(nn.Module):
             common_output['query_context_states'] = query_context_states
             common_output['query_context_weights'] = query_context_weights
             
-        # Process product if exists
-        if product is not None:
-            batch_size, num_products, product_len = product.size()
-            product_emb = self.embedding(product)
+        # Process passage if exists
+        if passage is not None:
+            batch_size, num_passages, passage_len = passage.size()
+            passage_emb = self.embedding(passage)
 
-            # Concatenate product and context
-            product_context = torch.cat([product, context.unsqueeze(1).expand(-1, num_products, -1)], dim=-1).reshape(
-                batch_size * num_products, product_len + context_len)
-            product_context_emb = torch.cat([product_emb, context_emb.unsqueeze(1).expand(-1, num_products, -1, -1)],
-                                            dim=-2).reshape(batch_size * num_products, product_len + context_len, -1)
+            # Concatenate passage and context
+            passage_context = torch.cat([passage, context.unsqueeze(1).expand(-1, num_passages, -1)], dim=-1).reshape(
+                batch_size * num_passages, passage_len + context_len)
+            passage_context_emb = torch.cat([passage_emb, context_emb.unsqueeze(1).expand(-1, num_passages, -1, -1)],
+                                            dim=-2).reshape(batch_size * num_passages, passage_len + context_len, -1)
             
             # Process through T3 encoder
-            product_context_states, product_context_weights = self.t3_encoder(product_context_emb,
-                                                                              src_key_padding_mask=product_context.eq(0))
+            passage_context_states, passage_context_weights = self.t3_encoder(passage_context_emb,
+                                                                              src_key_padding_mask=passage_context.eq(0))
             
             # Reshape states and weights for each layer
-            for i in range(len(product_context_states)):
-                product_context_states[i] = product_context_states[i].reshape(batch_size, num_products,
-                                                                              product_len + context_len, -1)
-                product_context_weights[i] = product_context_weights[i].reshape(batch_size, num_products,
-                                                                                product_len + context_len, -1)
+            for i in range(len(passage_context_states)):
+                passage_context_states[i] = passage_context_states[i].reshape(batch_size, num_passages,
+                                                                              passage_len + context_len, -1)
+                passage_context_weights[i] = passage_context_weights[i].reshape(batch_size, num_passages,
+                                                                                passage_len + context_len, -1)
             
             # Extract features from the last layer's CLS token
-            features.append(product_context_states[-1][:, :, product_len + 1])
-            common_output['product_context_states'] = product_context_states
-            common_output['product_context_weights'] = product_context_weights
+            features.append(passage_context_states[-1][:, :, passage_len + 1])
+            common_output['passage_context_states'] = passage_context_states
+            common_output['passage_context_weights'] = passage_context_weights
             
+        # Store outputs in common_output dictionary
+        common_output['context_states'] = context_states
+        common_output['context_weights'] = context_weights
         # Get final prediction by taking max over features and applying linear layer
         t3_output = self.linear(torch.cat(features, dim=1).max(dim=1, keepdim=False)[0])
         common_output['t3_output'] = t3_output

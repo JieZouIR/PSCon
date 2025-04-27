@@ -1,5 +1,0 @@
-experiment
-1. 修改了一下experiment中的README.md，指定了python=3.7
-2. 把PSCon_T6.py修改为PSCon.py，因为按照命名规则，PSCon_Tx.py为消融实验，排除task-x的模型，而PSCon_T6是包含了6个task，所以命名更改
-3. 给各个代码中的命名不明确的变量添加注释，给关键函数添加一行注释
-4. 把代码中passage替换成product，等价替换，替换之前确保了product在代码中不存在其他语义信息

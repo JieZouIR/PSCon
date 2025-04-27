@@ -1,7 +1,7 @@
 import codecs
 import json
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-from Rouge import *
+from evaluation.Rouge import *
 from collections import defaultdict
 import numpy as np
 from scipy import stats
@@ -85,7 +85,7 @@ def evaluate_T2(rs_t2, gt_t2, tokenizer):
     Returns:
         Dictionary containing BLEU and ROUGE scores for each action type and their averages
     """
-    actions = ['Clarify', 'Recommend']
+    actions = ['Clarify', 'Recommend', 'Inquire', 'Chitchat', 'No answer']
 
     bleu_dict = {}
     rouge_dict = {}
@@ -129,10 +129,10 @@ def evaluate_T2(rs_t2, gt_t2, tokenizer):
     rouge = 0
     for action in bleu_dict:
         bleu += bleu_dict[action]
-    bleu = bleu / float(len(bleu_dict) + 1)
+    bleu = bleu / float(len(bleu_dict))
     for action in rouge_dict:
         rouge += rouge_dict[action]
-    rouge = rouge / float(len(rouge_dict) + 1)
+    rouge = rouge / float(len(rouge_dict))
     return {'t2_avg_bleu_1': bleu, 't2_avg_rouge_l': rouge, 't2_bleu_1': bleu_dict, 't2_rouge_l': rouge_dict}
 
 
@@ -186,13 +186,13 @@ def evaluate_T3(rs_t3, gt_t3):
     f1 = 0
     for action in precision_dict:
         precision += precision_dict[action]
-    precision = precision / float(len(precision_dict) + 1)
+    precision = precision / float(len(precision_dict))
     for action in recall_dict:
         recall += recall_dict[action]
-    recall = recall / float(len(recall_dict) + 1)
+    recall = recall / float(len(recall_dict))
     for action in f1_dict:
         f1 += f1_dict[action]
-    f1 = f1 / float(len(f1_dict) + 1)
+    f1 = f1 / float(len(f1_dict))
     return {'t3_precision': precision_dict, 't3_recall': recall_dict, 't3_f1': f1_dict, 't3_avg_precision': precision,
             't3_avg_recall': recall, 't3_avg_f1': f1}
 
@@ -267,21 +267,49 @@ def create_pred_list(label_list):
     return pred_list
 
 
-def compute_map(labels, outputs):
+# def compute_map(labels, outputs):
+#     """
+#     Calculate Mean Average Precision (MAP)
+#     Args:
+#         labels: ground truth labels
+#         outputs: predicted scores
+#     Returns:
+#         Mean Average Precision score
+#     """
+#     y_true = labels
+#     y_pred = outputs
+#     AP = []
+#     for i in range(len(y_true)):
+#         AP.append(average_precision_score(y_true[i], y_pred[i]))
+#     return np.mean(AP)
+
+
+def compute_MAP(label_list):
     """
-    Calculate Mean Average Precision (MAP)
+    Compute MAP given a list of label sequences.
     Args:
-        labels: ground truth labels
-        outputs: predicted scores
+        label_list: list of lists, each inner list contains 0/1 labels
     Returns:
-        Mean Average Precision score
+        Mean Average Precision (MAP) score
     """
-    y_true = labels
-    y_pred = outputs
-    AP = []
-    for i in range(len(y_true)):
-        AP.append(average_precision_score(y_true[i], y_pred[i]))
-    return np.mean(AP)
+    AP_list = []
+    for labels in label_list:
+        num_correct = 0
+        precision_sum = 0
+        for idx, label in enumerate(labels):
+            if label == 1:
+                num_correct += 1
+                precision_at_k = num_correct / (idx + 1)  # 注意idx从0开始
+                precision_sum += precision_at_k
+        if num_correct > 0:
+            AP = precision_sum / num_correct
+            AP_list.append(AP)
+        else:
+            # 没有正例的情况可以选择忽略，或者记为0
+            AP_list.append(0)
+
+    MAP = sum(AP_list) / len(AP_list)
+    return MAP
 
 
 def evaluate_T4(rs_t4, gt_t4):
@@ -327,9 +355,6 @@ def evaluate_T4(rs_t4, gt_t4):
                 pred_list.append(pred)
 
     ndcg1 = ndcg(label_list, pred_list, k=1)
-    # print(ndcg1)
-    # ndcg1 = ndcg_score(label_list, pred_list, k=1)
-    # print(ndcg1)
     ndcg2 = ndcg(label_list, pred_list, k=2)
     ndcg3 = ndcg(label_list, pred_list, k=3)
     ndcg5 = ndcg(label_list, pred_list, k=5)
@@ -337,10 +362,11 @@ def evaluate_T4(rs_t4, gt_t4):
     ndcg20 = ndcg(label_list, pred_list, k=20)
     ndcg30 = ndcg(label_list, pred_list, k=30)
     ndcg45 = ndcg(label_list, pred_list, k=45)
-    pred_list = create_pred_list(label_list)
-    map_score = compute_map(label_list, pred_list)
+    # pred_list = create_pred_list(label_list)
+    # map_score1 = compute_map(label_list, pred_list)
+    map_score2 = compute_MAP(label_list)
     return {'t4_ndcg1': ndcg1, 't4_ndcg2': ndcg2, 't4_ndcg3': ndcg3, 't4_ndcg5': ndcg5, 't4_ndcg10': ndcg10,
-            't4_ndcg20': ndcg20, 't4_ndcg30': ndcg30, 't4_ndcg45': ndcg45, 't4_map': map_score}
+            't4_ndcg20': ndcg20, 't4_ndcg30': ndcg30, 't4_ndcg45': ndcg45, 't4_map': map_score2}
 
 
 def evaluate_T5(rs_t5, gt_t5):
@@ -382,7 +408,7 @@ def evaluate_T5(rs_t5, gt_t5):
             label_list.append(label)
             pred_list.append(pred)
 
-    pred_list = create_pred_list(label_list)
+    # pred_list = create_pred_list(label_list)
     ndcg1 = ndcg(label_list, pred_list, k=1)
     ndcg2 = ndcg(label_list, pred_list, k=2)
     ndcg3 = ndcg(label_list, pred_list, k=3)
@@ -394,10 +420,10 @@ def evaluate_T5(rs_t5, gt_t5):
     # ndcg_list = ndcg_score(label_list, pred_list)
     # ndcg10 = ndcg_score(label_list, pred_list, k=10)
     # ndcg10 = ndcg_at_k(label_list, pred_list, k=10)
-    pred_list = create_pred_list(label_list)
+
     # print(label_list)
     # print(pred_list)
-    map_score = compute_map(label_list, pred_list)
+    map_score = compute_MAP(label_list)
     # map_score2 = average_precision_score(label_list, pred_list)
     # map_score2 = calculate_map(label_list, pred_list)
     # ndcg10 = ndcg10 / gt_len
@@ -418,7 +444,7 @@ def evaluate_T6(rs_t6, gt_t6, tokenizer):
     Returns:
         Dictionary containing BLEU and ROUGE scores for each action type and their averages
     """
-    actions = ['Clarify', 'Recommend']
+    actions = ['Clarify', 'Recommend', 'Inquire', 'Chitchat', 'No answer']
 
     bleu_dict = {}
     rouge_dict = {}
@@ -453,28 +479,28 @@ def evaluate_T6(rs_t6, gt_t6, tokenizer):
     rouge = 0
     for action in bleu_dict:
         bleu += bleu_dict[action]
-    bleu = bleu / float(len(bleu_dict) + 1)
+    bleu = bleu / float(len(bleu_dict))
     for action in rouge_dict:
         rouge += rouge_dict[action]
-    rouge = rouge / float(len(rouge_dict) + 1)
+    rouge = rouge / float(len(rouge_dict))
 
     return {'t6_avg_bleu_1': bleu, 't6_avg_rouge_l': rouge, 't6_bleu_1': bleu_dict, 't6_rouge_l': rouge_dict}
 
 
-def evaluate(rs_files, gt_files, tokenizer):
+def evaluate(rs_files, gt_files, tokenizer, task=None):
     """
     Main evaluation function that runs all task evaluations
     Args:
         rs_files: list of files containing predicted results
         gt_files: list of files containing ground truth results
         tokenizer: tokenizer function for text processing
+        task: task name, optional ('t1', 't2', 't3', 't4', 't5', 't6')
     Returns:
-        Dictionary containing all evaluation metrics
+        Dictionary containing evaluation metrics for specified task or all tasks
     """
     rs = {}
     for file in rs_files:
         file_name = os.path.basename(file)
-        # print(file_name)
         with codecs.open(file, encoding='utf-8') as f:
             for line in f:
                 conv = json.loads(line)
@@ -482,9 +508,22 @@ def evaluate(rs_files, gt_files, tokenizer):
                     if conv[-i - 1]['role'] == 'user':
                         intent = conv[-i - 1]['intent']
                         break
-                selected_query = conv[-1]['selected_query']
-                selected_passage = conv[-1]['selected_passage']
-                rs[conv[-1]['msg_id']] = {'msg_id': conv[-1]['msg_id'], 'intent': intent, 'state': conv[-1]['state'],
+                if task == 't4':
+                    selected_query = conv[-1]['query_ranking']
+                    # selected_passage = conv[-1]['passage_ranking']
+                    rs[conv[-1]['msg_id']] = {'msg_id': conv[-1]['msg_id'], 'intent': intent, 'state': conv[-1]['state'],
+                                          'action': conv[-1]['action'], 'query_ranking': selected_query,
+                                          'response': conv[-1]['response']}
+                elif task == 't5':
+                    # selected_query = conv[-1]['selected_query']
+                    selected_passage = conv[-1]['passage_ranking']
+                    rs[conv[-1]['msg_id']] = {'msg_id': conv[-1]['msg_id'], 'intent': intent, 'state': conv[-1]['state'],
+                                          'action': conv[-1]['action'], 'passage_ranking': selected_passage,
+                                          'response': conv[-1]['response']}
+                else:
+                    selected_query = conv[-1]['selected_query']
+                    selected_passage = conv[-1]['selected_passage']
+                    rs[conv[-1]['msg_id']] = {'msg_id': conv[-1]['msg_id'], 'intent': intent, 'state': conv[-1]['state'],
                                           'action': conv[-1]['action'], 'query_ranking': selected_query,
                                           'passage_ranking': selected_passage, 'response': conv[-1]['response']}
 
@@ -503,11 +542,25 @@ def evaluate(rs_files, gt_files, tokenizer):
                                           'action': conv[-1]['action'], 'selected_query': selected_query,
                                           'selected_passage': selected_passage, 'response': conv[-1]['response']}
 
-    t1 = evaluate_T1(rs, gt)
-    t2 = evaluate_T2(rs, gt, tokenizer)
-    t3 = evaluate_T3(rs, gt)
-    t4 = evaluate_T4(rs, gt)
-    t5 = evaluate_T5(rs, gt)
-    t6 = evaluate_T6(rs, gt, tokenizer)
-
-    return {**t1, **t2, **t3, **t4, **t5, **t6}
+    # 根据task参数选择性运行评估
+    if task == 't1':
+        return evaluate_T1(rs, gt)
+    elif task == 't2':
+        return evaluate_T2(rs, gt, tokenizer)
+    elif task == 't3':
+        return evaluate_T3(rs, gt)
+    elif task == 't4':
+        return evaluate_T4(rs, gt)
+    elif task == 't5':
+        return evaluate_T5(rs, gt)
+    elif task == 't6':
+        return evaluate_T6(rs, gt, tokenizer)
+    else:
+        # 如果task为None或无效值，运行所有评估
+        t1 = evaluate_T1(rs, gt)
+        t2 = evaluate_T2(rs, gt, tokenizer)
+        t3 = evaluate_T3(rs, gt)
+        t4 = evaluate_T4(rs, gt)
+        t5 = evaluate_T5(rs, gt)
+        t6 = evaluate_T6(rs, gt, tokenizer)
+        return {**t1, **t2, **t3, **t4, **t5, **t6}

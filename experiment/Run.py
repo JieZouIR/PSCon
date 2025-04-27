@@ -26,6 +26,7 @@ from model.PSCon_T2 import *
 from model.PSCon_T3 import *
 from model.PSCon_T4 import *
 from model.PSCon_T5 import *
+from model.PSCon_T6 import *
 from model.PSCon import *
 from model.DuConv import *
 from model.KdConv import *
@@ -44,20 +45,19 @@ def prepare_dataset(args):
     PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
     PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
+    prepare_kdconv_dataset(args)
+    kdconv_dataset = KdConvDataset([args.kdconv_conversation_file], [args.kdconv_document_file], vocab2id, tokenizer)
+    print('KdConv done, ', 'datasize ', kdconv_dataset.len)
+    prepare_duconv_dataset(args)
+    duconv_dataset = DuConvDataset([args.duconv_conversation_file], vocab2id, tokenizer)
+    print('DuConv done, ', 'datasize ', duconv_dataset.len)
+    
     prepare_PSCon_dataset(args)
     PSCon_train_dataset = PSConDataset([args.PSCon_train_conversation_file], [args.PSCon_document_file], vocab2id,
                                      PSCon_intent2id, PSCon_action2id, tokenizer)
-    PSCon_valid_dataset = PSConDataset([args.PSCon_valid_conversation_file], [args.PSCon_document_file], vocab2id,
-                                     PSCon_intent2id, PSCon_action2id, tokenizer)
     PSCon_test_dataset = PSConDataset([args.PSCon_test_conversation_file], [args.PSCon_document_file], vocab2id,
                                     PSCon_intent2id, PSCon_action2id, tokenizer)
-    PSCon_testunseen_dataset = PSConDataset([args.PSCon_testunseen_conversation_file], [args.PSCon_document_file], vocab2id,
-                                          PSCon_intent2id, PSCon_action2id, tokenizer)
-    PSCon_testseen_dataset = PSConDataset([args.PSCon_testseen_conversation_file], [args.PSCon_document_file], vocab2id,
-                                        PSCon_intent2id, PSCon_action2id, tokenizer)
-    print('PSCon_old done, ', '\ntrain data size', PSCon_train_dataset.len, '\nvalid data size', PSCon_valid_dataset.len,
-          '\ntest data size', PSCon_test_dataset.len, '\ntestunseen data size', PSCon_testunseen_dataset.len,
-          '\ntestseen data size', PSCon_testseen_dataset.len)
+    print('PSCon done, ', '\ntrain data size', PSCon_train_dataset.len, '\ntest data size', PSCon_test_dataset.len)
 
 
 def build_modules(args):
@@ -77,24 +77,45 @@ def build_modules(args):
     return vocab2id, id2vocab, embedding, encoder, decoder, generator
 
 
-def build_PSCon_model(args):
-    """Build the complete PSCon model with all components"""
+def build_PSCon_model(args, task='t1'):
+    """构建PSCon模型,支持全任务或单任务
+    
+    Args:
+        args: 参数配置
+        task: 指定任务(t1-t6),为None时构建完整模型
+    """
     PSCon_intent2id, PSCon_id2intent = load_vocab(args.PSCon_intent)
     PSCon_action2id, PSCon_id2action = load_vocab(args.PSCon_action)
 
     vocab2id, id2vocab, embedding, encoder, decoder, generator = build_modules(args)
 
-    # Initialize all model components
-    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)  # Intent Detection model
-    t2 = T2(embedding, encoder, args.hidden_size, id2vocab)  # Keyword Extraction model
-    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)  # Action Prediction model
-    t4 = T4(embedding, encoder, args.hidden_size)  # Query Selection model
-    t5 = T5(embedding, encoder, args.hidden_size)  # Item Ranking model
-    t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)  # Response Generation model
+    # 初始化所有模型组件
+    t1 = T1(embedding, encoder, args.hidden_size, PSCon_id2intent)  
+    t2 = T2(embedding, encoder, args.hidden_size, id2vocab)
+    t3 = T3(embedding, encoder, args.hidden_size, PSCon_id2action)
+    t4 = T4(embedding, encoder, args.hidden_size)
+    t5 = T5(embedding, encoder, args.hidden_size)
+    t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)
 
-    PSCon_model = PSConModel(t1, t2, t3, t4, t5, t6)
-    init_params(PSCon_model)
-    return PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id
+    # 根据task参数返回对应的单任务模型
+    if task == 't1':
+        model = PSCon_T1Model(t1)
+    elif task == 't2':
+        model = PSCon_T2Model(t2) 
+    elif task == 't3':
+        model = PSCon_T3Model(t3)
+    elif task == 't4':
+        model = PSCon_T4Model(t4)
+    elif task == 't5':
+        model = PSCon_T5Model(t5)
+    elif task == 't6':
+        model = PSCon_T6Model(t3, t4, t5, t6)
+    else:
+        # 默认返回完整模型
+        model = PSConModel(t1, t2, t3, t4, t5, t6)
+
+    init_params(model)
+    return model, vocab2id, PSCon_intent2id, PSCon_action2id
 
 
 def build_pretrained_models(args):
@@ -233,7 +254,7 @@ def load_pretrained_model(args, prefix='full'):
         raise ValueError
 
     if os.path.exists(os.path.join(args.output_path, file_path, 'embedding.model')):
-        print("load PSCon_old model...")
+        print("load PSCon model...")
         embedding.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'embedding.model'), map_location='cpu'))
         encoder.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'encoder.model'), map_location='cpu'))
         decoder.load_state_dict(torch.load(os.path.join(args.output_path,  file_path, 'decoder.model'), map_location='cpu'))
@@ -244,7 +265,7 @@ def load_pretrained_model(args, prefix='full'):
         freeze_params(decoder)
         freeze_params(generator)
     else:
-        print("initial PSCon_old model...")
+        print("initial PSCon model...")
         init_params(embedding)
         init_params(encoder)
         init_params(decoder)
@@ -263,12 +284,13 @@ def load_pretrained_model(args, prefix='full'):
     t6 = T6(embedding, decoder, generator, args.hidden_size, id2vocab)
 
     PSCon_model = PSConModel(t1, t2, t3, t4, t5, t6)
-    PSCon_t1model = PSCon_T1Model(t1, t2, t3, t4, t5, t6)
-    PSCon_t2model = PSCon_T2Model(t1, t2, t3, t4, t5, t6)
-    PSCon_t3model = PSCon_T3Model(t1, t2, t3, t4, t5, t6)
-    PSCon_t4model = PSCon_T4Model(t1, t2, t3, t4, t5, t6)
-    PSCon_t5model = PSCon_T5Model(t1, t2, t3, t4, t5, t6)
-    return PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id, PSCon_t1model, PSCon_t2model, PSCon_t3model, PSCon_t4model, PSCon_t5model
+    PSCon_t1model = PSCon_T1Model(t1)
+    PSCon_t2model = PSCon_T2Model(t2)
+    PSCon_t3model = PSCon_T3Model(t3)
+    PSCon_t4model = PSCon_T4Model(t4)
+    PSCon_t5model = PSCon_T5Model(t5)
+    PSCon_t6model = PSCon_T6Model(t3, t4, t5, t6)
+    return PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id, PSCon_t1model, PSCon_t2model, PSCon_t3model, PSCon_t4model, PSCon_t5model, PSCon_t6model
 
 
 def finetune(args):
@@ -292,39 +314,43 @@ def finetune(args):
     else:
         print("fault args.model")
         raise ValueError
-    PSCon, vocab2id, PSCon_intent2id, PSCon_action2id, w1, w2, w3, w4, w5 = load_pretrained_model(args, prefix)
+    PSCon, vocab2id, PSCon_intent2id, PSCon_action2id, t1, t2, t3, t4, t5, t6 = load_pretrained_model(args, prefix)
 
-    if args.mode == 'finetune-not1':
-        PSCon_model = w1
-        save = 'PSCon_not1/'
-        print("finetune PSCon_old-not1")
-    elif args.mode == 'finetune-not2':
-        PSCon_model = w2
-        save = 'PSCon_noT2/'
-        print("finetune PSCon_old-not2")
-    elif args.mode == 'finetune-not3':
-        PSCon_model = w3
-        save = 'PSCon_noT3/'
-        print("finetune PSCon_old-not3")
-    elif args.mode == 'finetune-not4':
-        PSCon_model = w4
-        save = 'PSCon_noT4/'
-        print("finetune PSCon_old-not4")
-    elif args.mode == 'finetune-not5':
-        PSCon_model = w5
-        save = 'finetune_not5/'
-        print("finetune PSCon_old-not5")
+    if args.mode == 'finetune-t1':
+        PSCon_model = t1
+        save = 'PSCon_t1/'
+        print("finetune PSCon-t1")
+    elif args.mode == 'finetune-t2':
+        PSCon_model = t2
+        save = 'PSCon_t2/'
+        print("finetune PSCon-t2")
+    elif args.mode == 'finetune-t3':
+        PSCon_model = t3
+        save = 'PSCon_t3/'
+        print("finetune PSCon-t3")
+    elif args.mode == 'finetune-t4':
+        PSCon_model = t4
+        save = 'PSCon_t4/'
+        print("finetune PSCon-t4")
+    elif args.mode == 'finetune-t5':
+        PSCon_model = t5
+        save = 'PSCon_t5/'
+        print("finetune PSCon-t5")
+    elif args.mode == 'finetune-t6':
+        PSCon_model = t6
+        save = 'PSCon_t6/'
+        print("finetune PSCon-t6")
     elif args.mode == 'finetune':
         PSCon_model = PSCon
         save = 'PSCon_withpretrain/'
-        print("finetune PSCon_old")
+        print("finetune PSCon")
     elif args.mode == 'finetune-none':
         PSCon_model = PSCon
         save = "PSCon_nopretrain/"
-        print("train PSCon_old-FULL")
+        print("train PSCon-FULL")
     elif args.mode[:8] == 'finetune':
         PSCon_model = PSCon
-        print("finetune PSCon_old-FULL")
+        print("finetune PSCon-FULL")
     else:
         print("fault args.mode")
         raise ValueError
@@ -332,7 +358,7 @@ def finetune(args):
     print("model save in ", os.path.join(args.output_path, save))
     dataset = PSConDataset([args.PSCon_train_conversation_file], [args.PSCon_document_file], vocab2id, PSCon_intent2id,
                           PSCon_action2id, tokenizer)
-    print('PSCon_old training', 'data_size', dataset.len, 'gpu', args.num_gpus, 'epoch', args.epoch, 'batch_size',
+    print('PSCon training', 'data_size', dataset.len, 'gpu', args.num_gpus, 'epoch', args.epoch, 'batch_size',
           args.batch_size)
     optimizer = AdamW(PSCon_model.parameters(), lr=args.lr)
     bp_count = (args.epoch * dataset.len) / (args.num_gpus * args.batch_size)
@@ -348,29 +374,35 @@ def finetune(args):
         trainer.serialize(i + 1, os.path.join(args.output_path, save))
 
 
-def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
-    """Run inference on the specified dataset with the trained model"""
+def infer(args, prefix='test', epochs=[], folder="withpretrain"):
+    """运行指定数据集的推理
+    
+    Args:
+        args: 参数配置 
+        prefix: 数据集前缀(train/test等)
+        epochs: 指定epoch列表
+        folder: 模型保存文件夹
+    """
     tokenizer = char_tokenizer()
-    PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id = build_PSCon_model(args)
+    
+    # 解析任务类型
+    task = None
+    if args.mode.count('-') == 2:  # 如 infer-test-t1 
+        task = args.mode.split('-')[-1]
+    print("infer model task", task)
+    # 构建对应的模型
+    PSCon_model, vocab2id, PSCon_intent2id, PSCon_action2id = build_PSCon_model(args, task)
 
-    # Select appropriate dataset based on prefix
-    if prefix == 'valid':
-        print("infer valid")
-        conversation_file = args.PSCon_valid_conversation_file
-    elif prefix == 'train':
-        print("infer train")
+    # 选择数据集
+    if prefix == 'train':
+        print("infer train") 
         conversation_file = args.PSCon_train_conversation_file
-    elif prefix == 'testseen':
-        print("infer testseen")
-        conversation_file = args.PSCon_testseen_conversation_file
-    elif prefix == 'testunseen':
-        print("infer testunseen")
-        conversation_file = args.PSCon_testunseen_conversation_file
     elif prefix == 'test':
         print("infer test")
         conversation_file = args.PSCon_test_conversation_file
     else:
         raise ValueError
+
     dataset = PSConDataset([conversation_file], [args.PSCon_document_file], vocab2id, PSCon_intent2id, PSCon_action2id,
                           tokenizer)
 
@@ -382,20 +414,27 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
         for line in f:
             conv = json.loads(line)
             convs[conv[-1]['msg_id']] = conv
-    # folder = "withpretrain"
+
     model_path = "".join(["PSCon_", folder, "/"])
     file_path = "".join(["PSCon_", folder, "_infer_", prefix, "/"])
-    print("modle path", model_path)
+    if task:
+        file_path = file_path[:-1] + f"_{task}/"
+        
+    print("model path", model_path)
     print("file path", file_path)
+
     if not os.path.exists(os.path.join(args.output_path, model_path)):
         print(os.path.join(args.output_path, model_path), "path not exists...")
         makedirs(os.path.join(args.output_path, file_path))
         raise ValueError
+        
     if not os.path.exists(os.path.join(args.output_path, file_path)):
         print(os.path.join(args.output_path, file_path), "path not exists...")
         makedirs(os.path.join(args.output_path, file_path))
+        
     if not epochs:
         epochs = list(range(args.epoch))
+        
     for i in epochs:
         print('epoch', i + 1)
         model_file = os.path.join(os.path.join(args.output_path, model_path), '.'.join([str(i + 1), 'model']))
@@ -403,82 +442,127 @@ def infer(args, prefix='valid', epochs=[], folder="withpretrain"):
             PSCon_model.load_state_dict(torch.load(model_file, map_location='cpu'))
             output = trainer.test_epoch('test', dataset, PSCon_collate_fn, args.batch_size)
 
-            t1_output = PSCon_model.intent(output['t1_output'])
-            t2_output = PSCon_model.state(output['t2_output'])
-            t3_output = PSCon_model.action(output['t3_output'])
-            t4_output = PSCon_model.query(output['t4_output'])
-            t5_output = PSCon_model.product(output['t5_output'])
-            t6_output = PSCon_model.response(output['t6_output'])
+            # 根据task类型保存对应的输出
+            file_result = codecs.open(os.path.join(args.output_path, file_path, '.'.join([str(i+1), str(args.local_rank), 'json'])), "w", "utf-8")
+            
             for j in range(output['id'].size(0)):
                 conv = copy.deepcopy(convs[output['id'][j].item()])
                 id = conv[-1]['msg_id']
-                for k in range(len(conv)):
-                    if conv[-k - 1]['role'] == 'user':
-                        conv[-k - 1]['intent'] = t1_output[j][1:-1].split('-')
-                        break
+                
+                # 根据task保存对应的输出
+                if task == 't1':
+                    t1_output = PSCon_model.intent(output['t1_output'])
+                    for k in range(len(conv)):
+                        if conv[-k - 1]['role'] == 'user':
+                            conv[-k - 1]['intent'] = t1_output[j][1:-1].split('-')
+                            break
+                elif task == 't2':
+                    t2_output = PSCon_model.state(output['t2_output'])
+                    conv[-1]['state'] = t2_output[j]
+                elif task == 't3':
+                    t3_output = PSCon_model.action(output['t3_output'])
+                    conv[-1]['action'] = t3_output[j][1:-1].split('-')
+                elif task == 't4':
+                    t4_output = PSCon_model.query(output['t4_output'])
+                    conv[-1]['selected_query'] = []
+                    for index in range(len(t4_output[j])):
+                        conv[-1]['selected_query'].append((dataset.query(id, index), t4_output[j][index].item()))
+                    conv[-1]['query_ranking'] = sorted(conv[-1]['selected_query'], key=lambda x: x[1], reverse=True)
+                elif task == 't5':
+                    t5_output = PSCon_model.passage(output['t5_output'])
+                    conv[-1]['selected_passage'] = []
+                    for index in range(len(t5_output[j])):
+                        conv[-1]['selected_passage'].append((dataset.passage(id, index), t5_output[j][index].item()))
+                    conv[-1]['passage_ranking'] = sorted(conv[-1]['selected_passage'], key=lambda x: x[1], reverse=True)
+                elif task == 't6':
+                    t6_output = PSCon_model.response(output['t6_output'])
+                    conv[-1]['response'] = t6_output[j]
+                else:
+                    # 全任务输出
+                    t1_output = PSCon_model.intent(output['t1_output'])
+                    t2_output = PSCon_model.state(output['t2_output'])
+                    t3_output = PSCon_model.action(output['t3_output'])
+                    t4_output = PSCon_model.query(output['t4_output'])
+                    t5_output = PSCon_model.passage(output['t5_output'])
+                    t6_output = PSCon_model.response(output['t6_output'])
+                    
+                    for k in range(len(conv)):
+                        if conv[-k - 1]['role'] == 'user':
+                            conv[-k - 1]['intent'] = t1_output[j][1:-1].split('-')
+                            break
+                            
+                    conv[-1]['state'] = t2_output[j]
+                    conv[-1]['action'] = t3_output[j][1:-1].split('-')
+                    
+                    conv[-1]['selected_query'] = []
+                    for index in range(len(t4_output[j])):
+                        conv[-1]['selected_query'].append((dataset.query(id, index), t4_output[j][index].item()))
+                    conv[-1]['query_ranking'] = sorted(conv[-1]['selected_query'], key=lambda x: x[1], reverse=True)
+                    
+                    conv[-1]['selected_passage'] = []
+                    for index in range(len(t5_output[j])):
+                        conv[-1]['selected_passage'].append((dataset.passage(id, index), t5_output[j][index].item()))
+                    conv[-1]['passage_ranking'] = sorted(conv[-1]['selected_passage'], key=lambda x: x[1], reverse=True)
+                    
+                    conv[-1]['response'] = t6_output[j]
+                    
+                file_result.write(json.dumps(conv, ensure_ascii=False) + os.linesep)
+            file_result.close()
 
-                conv[-1]['state'] = t2_output[j]
-                conv[-1]['action'] = t3_output[j][1:-1].split('-')
 
-                # conv[-1]['selected_query'] = [dataset.query(id, index) for index in t4_output[j]]
-                conv[-1]['selected_query'] = []
-                for index in range(len(t4_output[j])):
-                    conv[-1]['selected_query'].append((dataset.query(id, index), t4_output[j][index].item()))
-                # conv[-1]['selected_query'] = sorted(conv[-1]['selected_query'], key=lambda x: x[1], reverse=True)
-                conv[-1]['query_ranking'] = sorted(conv[-1]['selected_query'], key=lambda x: x[1], reverse=True)
-
-                current_directory = os.getcwd()
-                output_file_path = os.path.join(current_directory, "t5&product_out.txt")
-                with open(output_file_path, "a") as file2:
-                    file2.write(f"t5:\n{t5_output}\n")
-                    file2.write(f"pa:\n{dataset}\n")
-                with open(output_file_path, "a") as file2:
-                    file2.write(f"conv[-1]['selected_product']old:\n{conv[-1]['selected_product']}\n")
-
-                conv[-1]['selected_product'] = []
-                for index in range(len(t5_output[j])):
-                    conv[-1]['selected_product'].append((dataset.product(id, index), t5_output[j][index].item()))
-                # conv[-1]['selected_product'] = sorted(conv[-1]['selected_product'], key=lambda x: x[1], reverse=True)
-                conv[-1]['product_ranking'] = sorted(conv[-1]['selected_product'], key=lambda x: x[1], reverse=True)
-                conv[-1]['response'] = t6_output[j]
-
-
-def eval(args, prefix='valid', epochs=[], folder="withpretrain"):
-    """Evaluate model performance on the specified dataset"""
+def eval(args, prefix='test', epochs=[], folder="withpretrain"):
+    """评估模型在指定数据集上的表现
+    
+    Args:
+        args: 参数配置
+        prefix: 数据集前缀(train/test等) 
+        epochs: 指定epoch列表
+        folder: 模型保存文件夹
+    """
     if args.local_rank != 0:
         return
+        
     tokenizer = char_tokenizer()
-    # Select appropriate dataset for evaluation
-    if prefix == 'valid':
-        conversation_file = args.PSCon_valid_conversation_file
-    elif prefix == 'train':
-        conversation_file = args.PSCon_train_conversation_file
+    
+    # 解析任务类型
+    task = None 
+    if args.mode.count('-') == 2:  # 如 eval-test-t1
+        task = args.mode.split('-')[-1]
+        
+    # 选择评估数据集
+    if prefix == 'train':
+        conversation_file = args.PSCon_train_conversation_file 
     elif prefix == 'test':
         conversation_file = args.PSCon_test_conversation_file
-    elif prefix == 'testseen':
-        conversation_file = args.PSCon_testseen_conversation_file
-    elif prefix == 'testunseen':
-        conversation_file = args.PSCon_testunseen_conversation_file
     else:
         raise ValueError
-    # folder = "withpretrain"
-    file_path = "".join(["PSCon_", folder, "_infer_", prefix, "/"])
+        
+    # 构建文件路径
+    if task:
+        # 单任务评估,如 PSCon_t1_infer_test_t1/
+        file_path = f"PSCon_{task}_infer_{prefix}_{task}/"
+    else:
+        # 全任务评估
+        file_path = f"PSCon_{folder}_infer_{prefix}/"
+        
     print("eval file ", file_path)
     print("gt file", conversation_file)
+    
     if not os.path.exists(os.path.join(args.output_path, file_path)):
         print(os.path.join(args.output_path, file_path), "path not exists...")
         raise ValueError
+        
     if not epochs:
         epochs = list(range(args.epoch))
+        
     for i in epochs:
         print('epoch', i + 1)
         if os.path.exists(os.path.join(args.output_path, file_path, '.'.join([str(i + 1), str(0), 'json']))):
-            rs_files = [os.path.join(args.output_path, file_path, '.'.join([str(i + 1), str(g), 'json'])) for g in
-                        range(4)]
+            rs_files = [os.path.join(args.output_path, file_path, '.'.join([str(i + 1), str(g), 'json'])) for g in range(4)]
             gt_files = [conversation_file]
             print(rs_files)
             print(gt_files)
-            result = evaluate(rs_files, gt_files, tokenizer)
+            result = evaluate(rs_files, gt_files, tokenizer, task)
             print(result)
 
 
@@ -508,38 +592,26 @@ if __name__ == '__main__':
                         default=os.path.join(dir_path, 'data/DuConv/DuConv.json'))
 
     parser.add_argument("--PSCon_train_file", type=str,
-                        default='data/PSCon_old/conversation_train_line.json')
-    parser.add_argument("--PSCon_valid_file", type=str,
-                        default='data/PSCon_old/conversation_valid_line.json')
-    parser.add_argument("--PSCon_testunseen_file", type=str,
-                        default='data/PSCon_old/conversation_testunseen_line.json')
-    parser.add_argument("--PSCon_testseen_file", type=str,
-                        default='data/PSCon_old/conversation_testseen_line.json')
+                        default='data/PSCon/conversation_train_line.json')
     parser.add_argument("--PSCon_test_file", type=str,
-                        default='data/PSCon_old/conversation_test_line.json')
+                        default='data/PSCon/conversation_test_line.json')
     parser.add_argument("--PSCon_intent", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/intent.txt'))
+                        default=os.path.join(dir_path, 'data/PSCon/intent.txt'))
     parser.add_argument("--PSCon_action", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/action.txt'))
+                        default=os.path.join(dir_path, 'data/PSCon/action.txt'))
     parser.add_argument("--PSCon_document_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/document_line.json'))
+                        default=os.path.join(dir_path, 'data/PSCon/document_line.json'))
     parser.add_argument("--PSCon_train_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/PSCon_train.json'))
-    parser.add_argument("--PSCon_valid_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/PSCon_valid.json'))
-    parser.add_argument("--PSCon_testunseen_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/PSCon_testunseen.json'))
-    parser.add_argument("--PSCon_testseen_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/PSCon_testseen.json'))
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_train.json'))
     parser.add_argument("--PSCon_test_conversation_file", type=str,
-                        default=os.path.join(dir_path, 'data/PSCon_old/PSCon_test.json'))
+                        default=os.path.join(dir_path, 'data/PSCon/PSCon_test.json'))
 
     parser.add_argument("--vocab", type=str, default=os.path.join(dir_path, 'data/vocab.txt'))
 
     parser.add_argument("--output_path", type=str, default='./output/')
     parser.add_argument("--num_gpus", type=int, default=1)
     parser.add_argument("--pretrain_epoch", type=int, default=5)
-    parser.add_argument("--epoch", type=int, default=10)
+    parser.add_argument("--epoch", type=int, default=30)
     parser.add_argument("--batch_size", type=int, default=5)
     parser.add_argument("--lr", type=float, default=2.5e-4)
     parser.add_argument("--hidden_size", type=int, default=512)
@@ -576,59 +648,23 @@ if __name__ == '__main__':
             pretrain_nokdconv(args)
     elif args.mode[:8] == 'finetune':
         finetune(args)
-    elif args.mode[:11] == 'infer-valid':
-        if args.mode == 'infer-valid':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        infer(args, prefix='valid', epochs=list(range(0, args.epoch)), folder=folder)
-    elif args.mode[:14] == 'infer-testseen':
-        if args.mode == 'infer-testseen':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        infer(args, 'testseen', epochs=list(range(0, 50)), folder=folder)
-    elif args.mode[:16] == 'infer-testunseen':
-        if args.mode == 'infer-testunseen':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        infer(args, 'testunseen', epochs=list(range(0, 50)), folder=folder)
     elif args.mode[:10] == 'infer-test':
         if args.mode == 'infer-test':
             folder = 'withpretrain'
         else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        infer(args, 'test', epochs=list(range(0, 50)), folder=folder)
-    elif args.mode[:10] == 'eval-valid':
-        if args.mode == 'eval-valid':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        eval(args, prefix='valid', epochs=list(range(0, args.epoch)), folder=folder)
-    elif args.mode[:13] == 'eval-testseen':
-        if args.mode == 'eval-testseen':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        eval(args, 'testseen', epochs=list(range(0, 50)), folder=folder)
-    elif args.mode[:15] == 'eval-testunseen':
-        if args.mode == 'eval-testunseen':
-            folder = 'withpretrain'
-        else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        eval(args, 'testunseen', epochs=list(range(0, 50)), folder=folder)
+            parts = args.mode.split('-')
+            if len(parts) == 3:  # infer-test-folder
+                folder = parts[2]
+            elif len(parts) == 4:  # infer-test-folder-task
+                folder = parts[2]
+        infer(args, prefix='test', epochs=list(range(0, args.epoch)), folder=folder)
     elif args.mode[:9] == 'eval-test':
         if args.mode == 'eval-test':
             folder = 'withpretrain'
         else:
-            assert len(args.mode.split('-')) == 3
-            folder = args.mode.split("-")[2]
-        eval(args, 'test', epochs=list(range(0, 50)), folder=folder)
+            parts = args.mode.split('-')
+            if len(parts) == 3:  # eval-test-folder
+                folder = parts[2]
+            elif len(parts) == 4:  # eval-test-folder-task
+                folder = parts[2]
+        eval(args, 'test', epochs=list(range(0, args.epoch)), folder=folder)

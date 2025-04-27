@@ -51,6 +51,41 @@ class T4(nn.Module):
         Returns:
             Updated common_output with T4 model predictions
         """
+        batch_size, context_len = context.size()
+        # Get context embeddings
+        context_emb = self.embedding(context)
+        features = []
+        
+        # Process query if exists
+        if query is not None and "query_context_states" not in common_output:
+            batch_size, num_queries, query_len = query.size()
+            # Get query embeddings
+            query_emb = self.embedding(query)
+            # Concatenate query and context for processing
+            query_context = torch.cat([query, context.unsqueeze(1).expand(-1, num_queries, -1)], dim=-1).reshape(
+                batch_size * num_queries, query_len + context_len)
+            
+            # Get embeddings for concatenated query and context
+            query_context_emb = torch.cat([query_emb, context_emb.unsqueeze(1).expand(-1, num_queries, -1, -1)],
+                                          dim=-2).reshape(batch_size * num_queries, query_len + context_len, -1)
+            
+            # Process through T4 encoder
+            # query_context_states: 4 * [batch_size, num_queries, query_len + context_len, hidden_size]
+            # query_context_weights: 4 * [batch_size, num_queries, query_len + context_len, query_len + context_len]
+            query_context_states, query_context_weights = self.t4_encoder(query_context_emb,
+                                                                          src_key_padding_mask=query_context.eq(0))
+            
+            # Reshape states and weights for each layer
+            for i in range(len(query_context_states)):
+                query_context_states[i] = query_context_states[i].reshape(batch_size, num_queries,
+                                                                          query_len + context_len, -1)
+                query_context_weights[i] = query_context_weights[i].reshape(batch_size, num_queries,
+                                                                            query_len + context_len, -1)
+            
+            # Extract features from the last layer's CLS token
+            features.append(query_context_states[-1][:, :, query_len + 1])
+            common_output['query_context_states'] = query_context_states
+            common_output['query_context_weights'] = query_context_weights
         # Process query context states and generate predictions
         t4_output = self.linear(common_output['query_context_states'][-1][:, :, 0]).squeeze(-1)
         t4_output = self.softmax(t4_output)

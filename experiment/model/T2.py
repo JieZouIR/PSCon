@@ -45,6 +45,13 @@ class T2(nn.Module):
 
     def forward(self, context, common_output):
         # Forward pass through the model
+        context_emb = self.embedding(context)
+
+        # context_states 4 * [batch_size, context_len, hidden_size]
+        # context_weights 4 * [batch_size, context_len, context_len]
+        context_states, context_weights = self.t2_encoder(context_emb, src_key_padding_mask=context.eq(0))
+        common_output['context_states'] = context_states
+        common_output['context_weights'] = context_weights
         # context_states 4 * [batch_size, context_len, hidden_size]
         context_states = common_output['context_states']
         # Apply linear layer and squeeze to get binary predictions

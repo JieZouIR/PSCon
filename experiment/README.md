@@ -43,6 +43,7 @@ python ./Run.py --mode='data'
 ```
 python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='pretrain'
 python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='finetune'
+python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='finetune-t1'
 ```
 
 Note that you should select the appropriate pretrain models from the folder `./output/pretrained`, and put them into `./output/pretrained_ready` which is newly created by yourself before finetuning. The hyperparameters are set to the default values used in our experiments. To see an overview of all hyperparameters, please refer to `./Run.py`.
@@ -50,12 +51,10 @@ Note that you should select the appropriate pretrain models from the folder `./o
 ## Evaluating
 
 + Run the following scripts:
-
 ```
-python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='infer-valid'
-python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='eval-valid'
+python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='infer-test-t1'
+python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='eval-test-t1'
 ```
-
 ```
 python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='infer-test'
 python -m torch.distributed.launch --nproc_per_node=4 ./Run.py --mode='eval-test'
